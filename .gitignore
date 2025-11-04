@@ -1,0 +1,8 @@
+/ugv_ws/build/
+/ugv_ws/images/
+/ugv_ws/install/
+/ugv_ws/log/
+*.txt
+*.sh
+*.zip
+README.md
