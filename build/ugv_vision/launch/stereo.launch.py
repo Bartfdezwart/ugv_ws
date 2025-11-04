@@ -1,1 +1,0 @@
-/home/bart/ugv_ws/src/ugv_main/ugv_vision/launch/stereo.launch.py

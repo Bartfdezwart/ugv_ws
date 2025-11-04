@@ -1,3 +1,0 @@
-[console_scripts]
-drive_and_blink = ugv_custom.drive_and_blink:main
-

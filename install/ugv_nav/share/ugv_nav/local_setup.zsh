@@ -1,1 +1,0 @@
-/home/bart/ugv_ws/build/ugv_nav/ament_cmake_environment_hooks/local_setup.zsh

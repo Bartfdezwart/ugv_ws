@@ -1,7 +1,0 @@
-{
-  "package_name": "costmap_converter_msgs",
-  "non_idl_tuples": [
-    "/home/bart/ugv_ws/src/ugv_else/costmap_converter/costmap_converter_msgs:msg/ObstacleMsg.msg",
-    "/home/bart/ugv_ws/src/ugv_else/costmap_converter/costmap_converter_msgs:msg/ObstacleArrayMsg.msg"
-  ]
-}

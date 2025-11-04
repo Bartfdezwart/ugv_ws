@@ -1,1 +1,0 @@
-/home/bart/ugv_ws/build/ugv_interface/rosidl_cmake/srv/MapSave_Response.msg

@@ -1,1 +1,0 @@
-/home/bart/ugv_ws/src/ugv_main/ugv_gazebo/launch/bringup/robot_state_publisher.launch.py

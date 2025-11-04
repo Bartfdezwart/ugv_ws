@@ -1,1 +1,0 @@
-/home/bart/ugv_ws/build/ugv_description/ament_cmake_core/ugv_descriptionConfig-version.cmake

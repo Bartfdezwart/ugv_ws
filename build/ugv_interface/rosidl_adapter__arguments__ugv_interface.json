@@ -1,7 +1,0 @@
-{
-  "package_name": "ugv_interface",
-  "non_idl_tuples": [
-    "/home/bart/ugv_ws/src/ugv_main/ugv_interface:srv/MapSave.srv",
-    "/home/bart/ugv_ws/src/ugv_main/ugv_interface:action/Behavior.action"
-  ]
-}
