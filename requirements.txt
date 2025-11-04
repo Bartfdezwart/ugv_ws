@@ -3,3 +3,12 @@ flask
 mediapipe
 requests
 pygame
+numpy<2
+opencv-python
+catkin_pkg
+empy==3.3.4
+lark==1.1.1
+rerun-sdk==0.22
+urdf_parser_py
+trimesh
+typeguard
