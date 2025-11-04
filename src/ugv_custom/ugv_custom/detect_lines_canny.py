@@ -2,10 +2,11 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from std_msgs.msg import Float32MultiArray
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
+
+from ugv_interface.msg import LineArray
 
 
 class DetectLinesCanny(Node):
@@ -16,8 +17,8 @@ class DetectLinesCanny(Node):
         # Subscribe to the camera
         self.image_sub = self.create_subscription(Image, '/image_raw', self.image_callback, 10)
 
-        # Flat list of all current detected lines.
-        self.line_pub = self.create_publisher(Float32MultiArray, '/linedetect', 10)
+        # Publisher: list of lines as flat float array [x1, y1, x2, y2, ...]
+        self.line_pub = self.create_publisher(LineArray, '/linedetect', 10)
 
         # Flat list of top line.
         self.top_line_pub = self.create_publisher(Float32MultiArray, '/linedetect_top', 10)
@@ -45,7 +46,7 @@ class DetectLinesCanny(Node):
             lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=50, minLineLength=50, maxLineGap=10)
             
             # Message publishing ----------------
-            line_msg = Float32MultiArray()
+            line_msg = LineArray()
             data = []
 
             if lines is not None:
