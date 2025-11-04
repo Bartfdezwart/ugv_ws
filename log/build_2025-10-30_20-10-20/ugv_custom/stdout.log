@@ -1,0 +1,35 @@
+running egg_info
+creating ../../build/ugv_custom/ugv_custom.egg-info
+writing ../../build/ugv_custom/ugv_custom.egg-info/PKG-INFO
+writing dependency_links to ../../build/ugv_custom/ugv_custom.egg-info/dependency_links.txt
+writing entry points to ../../build/ugv_custom/ugv_custom.egg-info/entry_points.txt
+writing requirements to ../../build/ugv_custom/ugv_custom.egg-info/requires.txt
+writing top-level names to ../../build/ugv_custom/ugv_custom.egg-info/top_level.txt
+writing manifest file '../../build/ugv_custom/ugv_custom.egg-info/SOURCES.txt'
+reading manifest file '../../build/ugv_custom/ugv_custom.egg-info/SOURCES.txt'
+writing manifest file '../../build/ugv_custom/ugv_custom.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/bart/ugv_ws/build/ugv_custom/build
+creating /home/bart/ugv_ws/build/ugv_custom/build/lib
+creating /home/bart/ugv_ws/build/ugv_custom/build/lib/ugv_custom
+copying ugv_custom/drive_and_blink.py -> /home/bart/ugv_ws/build/ugv_custom/build/lib/ugv_custom
+copying ugv_custom/__init__.py -> /home/bart/ugv_ws/build/ugv_custom/build/lib/ugv_custom
+running install
+running install_lib
+creating /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom
+copying /home/bart/ugv_ws/build/ugv_custom/build/lib/ugv_custom/drive_and_blink.py -> /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom
+copying /home/bart/ugv_ws/build/ugv_custom/build/lib/ugv_custom/__init__.py -> /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom
+byte-compiling /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom/drive_and_blink.py to drive_and_blink.cpython-310.pyc
+byte-compiling /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom/__init__.py to __init__.cpython-310.pyc
+running install_data
+creating /home/bart/ugv_ws/install/ugv_custom/share/ament_index
+creating /home/bart/ugv_ws/install/ugv_custom/share/ament_index/resource_index
+creating /home/bart/ugv_ws/install/ugv_custom/share/ament_index/resource_index/packages
+copying resource/ugv_custom -> /home/bart/ugv_ws/install/ugv_custom/share/ament_index/resource_index/packages
+copying package.xml -> /home/bart/ugv_ws/install/ugv_custom/share/ugv_custom
+running install_egg_info
+Copying ../../build/ugv_custom/ugv_custom.egg-info to /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom-0.0.0-py3.10.egg-info
+running install_scripts
+Installing drive_and_blink script to /home/bart/ugv_ws/install/ugv_custom/lib/ugv_custom
+writing list of installed files to '/home/bart/ugv_ws/build/ugv_custom/install.log'

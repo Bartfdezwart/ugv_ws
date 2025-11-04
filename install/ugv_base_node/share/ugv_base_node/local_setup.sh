@@ -1,0 +1,1 @@
+/home/bart/ugv_ws/build/ugv_base_node/ament_cmake_environment_hooks/local_setup.sh

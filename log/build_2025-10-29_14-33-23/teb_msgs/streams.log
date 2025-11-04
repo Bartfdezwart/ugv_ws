@@ -1,0 +1,286 @@
+[0.016s] Invoking command in '/home/bart/ugv_ws/build/teb_msgs': AMENT_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ros2_ws/install/my_robot_controller:/opt/ros/humble LD_LIBRARY_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/bart/ugv_ws/install/costmap_converter_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /home/bart/ugv_ws/src/ugv_else/teb_local_planner/teb_msgs -Wno-dev -DCMAKE_INSTALL_PREFIX=/home/bart/ugv_ws/install/teb_msgs
+[0.075s] -- The C compiler identification is GNU 11.4.0
+[0.126s] -- The CXX compiler identification is GNU 11.4.0
+[0.134s] -- Detecting C compiler ABI info
+[0.193s] -- Detecting C compiler ABI info - done
+[0.200s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.200s] -- Detecting C compile features
+[0.200s] -- Detecting C compile features - done
+[0.204s] -- Detecting CXX compiler ABI info
+[0.278s] -- Detecting CXX compiler ABI info - done
+[0.285s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.285s] -- Detecting CXX compile features
+[0.285s] -- Detecting CXX compile features - done
+[0.287s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.453s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.572s] -- Found builtin_interfaces: 1.2.2 (/opt/ros/humble/share/builtin_interfaces/cmake)
+[0.601s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.606s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.613s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.624s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.637s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.649s] -- Found costmap_converter_msgs: 0.1.2 (/home/bart/ugv_ws/install/costmap_converter_msgs/share/costmap_converter_msgs/cmake)
+[0.687s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[1.031s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[1.517s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.729s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.744s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[1.745s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[1.770s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[1.770s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[1.770s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[1.770s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[1.802s] -- Found PythonExtra: .so  
+[1.888s] -- Configuring done
+[1.925s] -- Generating done
+[1.945s] -- Build files have been written to: /home/bart/ugv_ws/build/teb_msgs
+[1.959s] Invoked command in '/home/bart/ugv_ws/build/teb_msgs' returned '0': AMENT_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ros2_ws/install/my_robot_controller:/opt/ros/humble LD_LIBRARY_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/bart/ugv_ws/install/costmap_converter_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /home/bart/ugv_ws/src/ugv_else/teb_local_planner/teb_msgs -Wno-dev -DCMAKE_INSTALL_PREFIX=/home/bart/ugv_ws/install/teb_msgs
+[1.960s] Invoking command in '/home/bart/ugv_ws/build/teb_msgs': AMENT_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ros2_ws/install/my_robot_controller:/opt/ros/humble LD_LIBRARY_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/bart/ugv_ws/install/costmap_converter_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /home/bart/ugv_ws/build/teb_msgs -- -j8 -l8
+[2.000s] [  2%] [34m[1mGenerating C code for ROS interfaces[0m
+[2.022s] [  4%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[2.048s] [  4%] Built target ament_cmake_python_copy_teb_msgs
+[2.596s] running egg_info
+[2.597s] creating teb_msgs.egg-info
+[2.598s] writing teb_msgs.egg-info/PKG-INFO
+[2.598s] writing dependency_links to teb_msgs.egg-info/dependency_links.txt
+[2.599s] writing top-level names to teb_msgs.egg-info/top_level.txt
+[2.601s] writing manifest file 'teb_msgs.egg-info/SOURCES.txt'
+[2.605s] reading manifest file 'teb_msgs.egg-info/SOURCES.txt'
+[2.606s] writing manifest file 'teb_msgs.egg-info/SOURCES.txt'
+[2.667s] [  4%] Built target ament_cmake_python_build_teb_msgs_egg
+[2.987s] [  4%] Built target teb_msgs__cpp
+[3.016s] [  6%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+[3.020s] [  8%] [34m[1mGenerating C++ type support dispatch for ROS interfaces[0m
+[3.020s] [ 10%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[3.146s] [ 12%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_generator_c.dir/rosidl_generator_c/teb_msgs/msg/detail/feedback_msg__functions.c.o[0m
+[3.157s] [ 14%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_generator_c.dir/rosidl_generator_c/teb_msgs/msg/detail/trajectory_msg__functions.c.o[0m
+[3.161s] [ 17%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_generator_c.dir/rosidl_generator_c/teb_msgs/msg/detail/trajectory_point_msg__functions.c.o[0m
+[3.361s] [ 19%] [32m[1mLinking C shared library libteb_msgs__rosidl_generator_c.so[0m
+[3.472s] [ 19%] Built target teb_msgs__rosidl_generator_c
+[3.497s] [ 21%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[3.502s] [ 23%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[3.507s] [ 25%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[3.812s] [ 27%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/teb_msgs/msg/feedback_msg__type_support.cpp.o[0m
+[3.816s] [ 29%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/teb_msgs/msg/trajectory_msg__type_support.cpp.o[0m
+[3.832s] [ 31%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/teb_msgs/msg/trajectory_point_msg__type_support.cpp.o[0m
+[4.295s] [ 34%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/teb_msgs/msg/detail/feedback_msg__type_support.cpp.o[0m
+[4.348s] [ 36%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/teb_msgs/msg/detail/trajectory_msg__type_support.cpp.o[0m
+[4.401s] [ 38%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/teb_msgs/msg/detail/dds_fastrtps/feedback_msg__type_support.cpp.o[0m
+[4.624s] [ 40%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/teb_msgs/msg/detail/feedback_msg__type_support_c.cpp.o[0m
+[4.683s] [ 42%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/teb_msgs/msg/detail/dds_fastrtps/trajectory_msg__type_support.cpp.o[0m
+[4.842s] [ 44%] [32m[1mLinking CXX shared library libteb_msgs__rosidl_typesupport_cpp.so[0m
+[4.873s] [ 46%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/teb_msgs/msg/detail/feedback_msg__type_support.c.o[0m
+[4.964s] [ 48%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/teb_msgs/msg/feedback_msg__type_support.cpp.o[0m
+[4.969s] [ 48%] Built target teb_msgs__rosidl_typesupport_cpp
+[4.993s] [ 51%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/teb_msgs/msg/detail/dds_fastrtps/trajectory_point_msg__type_support.cpp.o[0m
+[5.011s] [ 53%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/teb_msgs/msg/detail/trajectory_msg__type_support.c.o[0m
+[5.047s] [ 55%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/teb_msgs/msg/trajectory_msg__type_support.cpp.o[0m
+[5.156s] [ 57%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/teb_msgs/msg/trajectory_point_msg__type_support.cpp.o[0m
+[5.176s] [ 59%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/teb_msgs/msg/detail/trajectory_point_msg__type_support.c.o[0m
+[5.273s] [ 61%] [32m[1mLinking CXX shared library libteb_msgs__rosidl_typesupport_c.so[0m
+[5.314s] [ 63%] [32m[1mLinking C shared library libteb_msgs__rosidl_typesupport_introspection_c.so[0m
+[5.362s] [ 63%] Built target teb_msgs__rosidl_typesupport_c
+[5.400s] [ 65%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/teb_msgs/msg/detail/trajectory_point_msg__type_support.cpp.o[0m
+[5.405s] [ 65%] Built target teb_msgs__rosidl_typesupport_introspection_c
+[5.427s] [ 68%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/teb_msgs/msg/detail/trajectory_msg__type_support_c.cpp.o[0m
+[5.428s] [ 70%] [32mBuilding CXX object CMakeFiles/teb_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/teb_msgs/msg/detail/trajectory_point_msg__type_support_c.cpp.o[0m
+[6.328s] [ 72%] [32m[1mLinking CXX shared library libteb_msgs__rosidl_typesupport_fastrtps_c.so[0m
+[6.394s] [ 74%] [32m[1mLinking CXX shared library libteb_msgs__rosidl_typesupport_fastrtps_cpp.so[0m
+[6.509s] [ 74%] Built target teb_msgs__rosidl_typesupport_fastrtps_c
+[6.590s] [ 76%] [32m[1mLinking CXX shared library libteb_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[6.719s] [ 76%] Built target teb_msgs__rosidl_typesupport_fastrtps_cpp
+[6.770s] [ 76%] Built target teb_msgs__rosidl_typesupport_introspection_cpp
+[6.829s] [ 76%] Built target teb_msgs
+[6.887s] [ 78%] [34m[1mGenerating Python code for ROS interfaces[0m
+[9.010s] [ 78%] Built target teb_msgs__py
+[9.065s] [ 80%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_generator_py.dir/rosidl_generator_py/teb_msgs/msg/_feedback_msg_s.c.o[0m
+[9.080s] [ 85%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_generator_py.dir/rosidl_generator_py/teb_msgs/msg/_trajectory_msg_s.c.o[0m
+[9.081s] [ 85%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_generator_py.dir/rosidl_generator_py/teb_msgs/msg/_trajectory_point_msg_s.c.o[0m
+[9.547s] [ 87%] [32m[1mLinking C shared library rosidl_generator_py/teb_msgs/libteb_msgs__rosidl_generator_py.so[0m
+[9.707s] [ 87%] Built target teb_msgs__rosidl_generator_py
+[9.771s] [ 89%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_typesupport_fastrtps_c__pyext.dir/rosidl_generator_py/teb_msgs/_teb_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o[0m
+[9.786s] [ 91%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_typesupport_introspection_c__pyext.dir/rosidl_generator_py/teb_msgs/_teb_msgs_s.ep.rosidl_typesupport_introspection_c.c.o[0m
+[9.797s] [ 93%] [32mBuilding C object CMakeFiles/teb_msgs__rosidl_typesupport_c__pyext.dir/rosidl_generator_py/teb_msgs/_teb_msgs_s.ep.rosidl_typesupport_c.c.o[0m
+[10.107s] [ 95%] [32m[1mLinking C shared library rosidl_generator_py/teb_msgs/teb_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so[0m
+[10.140s] [ 97%] [32m[1mLinking C shared library rosidl_generator_py/teb_msgs/teb_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so[0m
+[10.156s] [100%] [32m[1mLinking C shared library rosidl_generator_py/teb_msgs/teb_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so[0m
+[10.258s] [100%] Built target teb_msgs__rosidl_typesupport_fastrtps_c__pyext
+[10.291s] [100%] Built target teb_msgs__rosidl_typesupport_c__pyext
+[10.310s] [100%] Built target teb_msgs__rosidl_typesupport_introspection_c__pyext
+[10.359s] Invoked command in '/home/bart/ugv_ws/build/teb_msgs' returned '0': AMENT_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ros2_ws/install/my_robot_controller:/opt/ros/humble LD_LIBRARY_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/bart/ugv_ws/install/costmap_converter_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /home/bart/ugv_ws/build/teb_msgs -- -j8 -l8
+[10.387s] Invoking command in '/home/bart/ugv_ws/build/teb_msgs': AMENT_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ros2_ws/install/my_robot_controller:/opt/ros/humble LD_LIBRARY_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/bart/ugv_ws/install/costmap_converter_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /home/bart/ugv_ws/build/teb_msgs
+[10.407s] -- Install configuration: ""
+[10.407s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/ament_index/resource_index/rosidl_interfaces/teb_msgs
+[10.407s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs
+[10.408s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg
+[10.408s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail
+[10.409s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__struct.h
+[10.410s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__type_support.h
+[10.410s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__functions.c
+[10.410s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__type_support.h
+[10.411s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__struct.h
+[10.411s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__functions.c
+[10.411s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__struct.h
+[10.411s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__functions.h
+[10.411s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__type_support.h
+[10.411s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__functions.h
+[10.411s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__functions.c
+[10.421s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__functions.h
+[10.422s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/feedback_msg.h
+[10.422s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/trajectory_point_msg.h
+[10.422s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/rosidl_generator_c__visibility_control.h
+[10.422s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/trajectory_msg.h
+[10.422s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/library_path.sh
+[10.422s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/library_path.dsv
+[10.422s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_generator_c.so
+[10.422s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_generator_c.so" to ""
+[10.422s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs
+[10.422s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg
+[10.427s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail
+[10.427s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__rosidl_typesupport_fastrtps_c.h
+[10.427s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__rosidl_typesupport_fastrtps_c.h
+[10.427s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__rosidl_typesupport_fastrtps_c.h
+[10.427s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[10.427s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_fastrtps_c.so
+[10.427s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_fastrtps_c.so" to ""
+[10.427s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs
+[10.427s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg
+[10.427s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__type_support.hpp
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__builder.hpp
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__type_support.hpp
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__builder.hpp
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__traits.hpp
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__traits.hpp
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__struct.hpp
+[10.428s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__struct.hpp
+[10.433s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__traits.hpp
+[10.433s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__builder.hpp
+[10.436s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__type_support.hpp
+[10.437s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__struct.hpp
+[10.437s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/feedback_msg.hpp
+[10.437s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/trajectory_point_msg.hpp
+[10.437s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+[10.437s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/trajectory_msg.hpp
+[10.437s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs
+[10.438s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg
+[10.438s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail
+[10.438s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/dds_fastrtps
+[10.438s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[10.438s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[10.438s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[10.438s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[10.438s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_fastrtps_cpp.so
+[10.438s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""
+[10.438s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs
+[10.439s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg
+[10.439s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__rosidl_typesupport_introspection_c.h
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__type_support.c
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__type_support.c
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__rosidl_typesupport_introspection_c.h
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__rosidl_typesupport_introspection_c.h
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__type_support.c
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[10.439s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_introspection_c.so
+[10.439s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_introspection_c.so" to ""
+[10.440s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_c.so
+[10.440s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_c.so" to ""
+[10.440s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs
+[10.440s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg
+[10.440s] -- Up-to-date: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail
+[10.440s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__rosidl_typesupport_introspection_cpp.hpp
+[10.440s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__rosidl_typesupport_introspection_cpp.hpp
+[10.450s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__type_support.cpp
+[10.451s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_point_msg__type_support.cpp
+[10.451s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/trajectory_msg__type_support.cpp
+[10.451s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/include/teb_msgs/teb_msgs/msg/detail/feedback_msg__rosidl_typesupport_introspection_cpp.hpp
+[10.451s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_introspection_cpp.so
+[10.451s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_introspection_cpp.so" to ""
+[10.451s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_cpp.so
+[10.451s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_typesupport_cpp.so" to ""
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/pythonpath.sh
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/pythonpath.dsv
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs-0.0.1-py3.10.egg-info
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs-0.0.1-py3.10.egg-info/SOURCES.txt
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs-0.0.1-py3.10.egg-info/dependency_links.txt
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs-0.0.1-py3.10.egg-info/top_level.txt
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs-0.0.1-py3.10.egg-info/PKG-INFO
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs
+[10.452s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/_teb_msgs_s.ep.rosidl_typesupport_introspection_c.c
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/_teb_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/libteb_msgs__rosidl_generator_py.so
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_trajectory_msg_s.c
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_feedback_msg_s.c
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_feedback_msg.py
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_trajectory_point_msg.py
+[10.453s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_trajectory_msg.py
+[10.454s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_trajectory_point_msg_s.c
+[10.454s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/__init__.py
+[10.454s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[10.454s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/__init__.py
+[10.454s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/_teb_msgs_s.ep.rosidl_typesupport_c.c
+[10.620s] Listing '/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs'...
+[10.620s] Compiling '/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/__init__.py'...
+[10.620s] Listing '/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg'...
+[10.620s] Compiling '/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/__init__.py'...
+[10.620s] Compiling '/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_feedback_msg.py'...
+[10.621s] Compiling '/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_trajectory_msg.py'...
+[10.621s] Compiling '/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/msg/_trajectory_point_msg.py'...
+[10.633s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[10.633s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" to ""
+[10.634s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[10.634s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so" to ""
+[10.634s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[10.635s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages/teb_msgs/teb_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so" to ""
+[10.635s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_generator_py.so
+[10.635s] -- Set runtime path of "/home/bart/ugv_ws/install/teb_msgs/lib/libteb_msgs__rosidl_generator_py.so" to ""
+[10.635s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/msg/FeedbackMsg.idl
+[10.640s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/msg/TrajectoryMsg.idl
+[10.641s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/msg/TrajectoryPointMsg.idl
+[10.641s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/msg/FeedbackMsg.msg
+[10.641s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/msg/TrajectoryMsg.msg
+[10.642s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/msg/TrajectoryPointMsg.msg
+[10.643s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/ament_index/resource_index/package_run_dependencies/teb_msgs
+[10.644s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/ament_index/resource_index/parent_prefix_path/teb_msgs
+[10.644s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/ament_prefix_path.sh
+[10.644s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/ament_prefix_path.dsv
+[10.645s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/path.sh
+[10.645s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/environment/path.dsv
+[10.650s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/local_setup.bash
+[10.651s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/local_setup.sh
+[10.651s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/local_setup.zsh
+[10.651s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/local_setup.dsv
+[10.651s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/package.dsv
+[10.656s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/ament_index/resource_index/packages/teb_msgs
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_generator_cExport.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_generator_cExport-noconfig.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_generator_cppExport.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_introspection_cExport.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[10.669s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_cExport.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_cExport-noconfig.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_introspection_cppExport.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_cppExport.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_generator_pyExport.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/export_teb_msgs__rosidl_generator_pyExport-noconfig.cmake
+[10.670s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/rosidl_cmake-extras.cmake
+[10.671s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+[10.671s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+[10.671s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+[10.671s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/ament_cmake_export_targets-extras.cmake
+[10.671s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[10.671s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[10.671s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgsConfig.cmake
+[10.693s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/cmake/teb_msgsConfig-version.cmake
+[10.693s] -- Installing: /home/bart/ugv_ws/install/teb_msgs/share/teb_msgs/package.xml
+[10.693s] Invoked command in '/home/bart/ugv_ws/build/teb_msgs' returned '0': AMENT_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ros2_ws/install/my_robot_controller:/opt/ros/humble LD_LIBRARY_PATH=/home/bart/ugv_ws/install/costmap_converter_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/bart/ugv_ws/install/costmap_converter_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /home/bart/ugv_ws/build/teb_msgs

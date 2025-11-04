@@ -1,0 +1,67 @@
+[0.000000] (-) TimerEvent: {}
+[0.000187] (-) JobUnselected: {'identifier': 'apriltag'}
+[0.000210] (-) JobUnselected: {'identifier': 'apriltag_msgs'}
+[0.000223] (-) JobUnselected: {'identifier': 'apriltag_ros'}
+[0.000235] (-) JobUnselected: {'identifier': 'cartographer'}
+[0.000246] (-) JobUnselected: {'identifier': 'costmap_converter'}
+[0.000256] (-) JobUnselected: {'identifier': 'costmap_converter_msgs'}
+[0.000266] (-) JobUnselected: {'identifier': 'emcl2'}
+[0.000277] (-) JobUnselected: {'identifier': 'explore_lite'}
+[0.000288] (-) JobUnselected: {'identifier': 'ldlidar'}
+[0.000298] (-) JobUnselected: {'identifier': 'openslam_gmapping'}
+[0.000316] (-) JobUnselected: {'identifier': 'rf2o_laser_odometry'}
+[0.000363] (-) JobUnselected: {'identifier': 'robot_pose_publisher'}
+[0.000373] (-) JobUnselected: {'identifier': 'slam_gmapping'}
+[0.000382] (-) JobUnselected: {'identifier': 'teb_local_planner'}
+[0.000391] (-) JobUnselected: {'identifier': 'teb_msgs'}
+[0.000401] (-) JobUnselected: {'identifier': 'ugv_base_node'}
+[0.000410] (-) JobUnselected: {'identifier': 'ugv_bringup'}
+[0.000420] (-) JobUnselected: {'identifier': 'ugv_chat_ai'}
+[0.000429] (-) JobUnselected: {'identifier': 'ugv_description'}
+[0.000439] (-) JobUnselected: {'identifier': 'ugv_gazebo'}
+[0.000449] (-) JobUnselected: {'identifier': 'ugv_interface'}
+[0.000458] (-) JobUnselected: {'identifier': 'ugv_nav'}
+[0.000467] (-) JobUnselected: {'identifier': 'ugv_slam'}
+[0.000477] (-) JobUnselected: {'identifier': 'ugv_tools'}
+[0.000486] (-) JobUnselected: {'identifier': 'ugv_vision'}
+[0.000496] (-) JobUnselected: {'identifier': 'ugv_web_app'}
+[0.000505] (-) JobUnselected: {'identifier': 'vizanti'}
+[0.000515] (-) JobUnselected: {'identifier': 'vizanti_cpp'}
+[0.000524] (-) JobUnselected: {'identifier': 'vizanti_demos'}
+[0.000533] (-) JobUnselected: {'identifier': 'vizanti_msgs'}
+[0.000543] (-) JobUnselected: {'identifier': 'vizanti_server'}
+[0.000554] (ugv_custom) JobQueued: {'identifier': 'ugv_custom', 'dependencies': OrderedDict()}
+[0.000568] (ugv_custom) JobStarted: {'identifier': 'ugv_custom'}
+[0.099402] (-) TimerEvent: {}
+[0.199679] (-) TimerEvent: {}
+[0.299945] (-) TimerEvent: {}
+[0.400209] (-) TimerEvent: {}
+[0.500522] (-) TimerEvent: {}
+[0.538656] (ugv_custom) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', '-W', 'ignore:easy_install command is deprecated', 'setup.py', 'egg_info', '--egg-base', '../../build/ugv_custom', 'build', '--build-base', '/home/bart/ugv_ws/build/ugv_custom/build', 'install', '--record', '/home/bart/ugv_ws/build/ugv_custom/install.log', '--single-version-externally-managed', 'install_data'], 'cwd': '/home/bart/ugv_ws/src/ugv_custom', 'env': {'LESSOPEN': '| /usr/bin/lesspipe %s', 'USER': 'bart', 'LC_TIME': 'nl_NL.UTF-8', 'XDG_SESSION_TYPE': 'wayland', 'LDLIDAR_MODEL': 'ld19', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/home/bart/ugv_ws/install/vizanti_msgs/lib:/home/bart/ugv_ws/install/ugv_interface/lib:/home/bart/ugv_ws/install/teb_msgs/lib:/home/bart/ugv_ws/install/openslam_gmapping/lib:/home/bart/ugv_ws/install/costmap_converter_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib', 'HOME': '/home/bart', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'nl_NL.UTF-8', 'DBUS_STARTER_BUS_TYPE': 'session', 'SYSTEMD_EXEC_PID': '1054', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus,guid=ba2c02e304afa1dc93fa36186903c3b9', 'COLORTERM': 'truecolor', 'IM_CONFIG_PHASE': '1', 'WAYLAND_DISPLAY': 'wayland-0', 'COLCON_PREFIX_PATH': '/home/bart/ugv_ws/install:/home/bart/ros2_ws/install', 'ROS_DISTRO': 'humble', 'LOGNAME': 'bart', 'IGN_GAZEBO_MODEL_PATH': '/opt/ros/humble/share', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'bart', 'TERM': 'xterm-256color', 'GAZEBO_MODEL_PATH': '/opt/ros/humble/share', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'ROS_LOCALHOST_ONLY': '0', 'PATH': '/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/bart-Surface-Pro-7:@/tmp/.ICE-unix/1054,unix/bart-Surface-Pro-7:/tmp/.ICE-unix/1054', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'nl_NL.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/ac652754_8d80_4cc2_b4c9_ca5e5a47bc45', 'GNOME_SETUP_DISPLAY': ':1', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':0', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'nl_NL.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/.mutter-Xwaylandauth.V0X6E3', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'GNOME_TERMINAL_SERVICE': ':1.133', 'SSH_AGENT_LAUNCHER': 'gnome-keyring', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'ROS_DOMAIN_ID': '5', 'AMENT_PREFIX_PATH': '/home/bart/ugv_ws/install/vizanti:/home/bart/ugv_ws/install/vizanti_server:/home/bart/ugv_ws/install/vizanti_demos:/home/bart/ugv_ws/install/vizanti_msgs:/home/bart/ugv_ws/install/vizanti_cpp:/home/bart/ugv_ws/install/ugv_web_app:/home/bart/ugv_ws/install/ugv_vision:/home/bart/ugv_ws/install/ugv_tools:/home/bart/ugv_ws/install/ugv_slam:/home/bart/ugv_ws/install/ugv_nav:/home/bart/ugv_ws/install/ugv_interface:/home/bart/ugv_ws/install/ugv_gazebo:/home/bart/ugv_ws/install/ugv_description:/home/bart/ugv_ws/install/ugv_custom:/home/bart/ugv_ws/install/ugv_chat_ai:/home/bart/ugv_ws/install/ugv_bringup:/home/bart/ugv_ws/install/ugv_base_node:/home/bart/ugv_ws/install/teb_msgs:/home/bart/ugv_ws/install/slam_gmapping:/home/bart/ugv_ws/install/robot_pose_publisher:/home/bart/ugv_ws/install/rf2o_laser_odometry:/home/bart/ugv_ws/install/openslam_gmapping:/home/bart/ugv_ws/install/explore_lite:/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ugv_ws/install/cartographer:/home/bart/ros2_ws/install/my_robot_controller:/opt/ros/humble', 'SHELL': '/bin/bash', 'LC_NAME': 'nl_NL.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'IGN_GAZEBO_RESOURCE_PATH': '/opt/ros/humble/share', 'LC_MEASUREMENT': 'nl_NL.UTF-8', 'GAZEBO_RESOURCE_PATH': '/opt/ros/humble/share', 'LC_IDENTIFICATION': 'nl_NL.UTF-8', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/bart/ugv_ws/build/ugv_custom', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'DBUS_STARTER_ADDRESS': 'unix:path=/run/user/1000/bus,guid=ba2c02e304afa1dc93fa36186903c3b9', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/home/bart/ugv_ws/build/ugv_custom/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages:/home/bart/ugv_ws/install/vizanti_msgs/local/lib/python3.10/dist-packages:/home/bart/ugv_ws/build/ugv_web_app:/home/bart/ugv_ws/install/ugv_web_app/lib/python3.10/site-packages:/home/bart/ugv_ws/build/ugv_vision:/home/bart/ugv_ws/install/ugv_vision/lib/python3.10/site-packages:/home/bart/ugv_ws/build/ugv_tools:/home/bart/ugv_ws/install/ugv_tools/lib/python3.10/site-packages:/home/bart/ugv_ws/install/ugv_interface/local/lib/python3.10/dist-packages:/home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages:/home/bart/ugv_ws/build/ugv_chat_ai:/home/bart/ugv_ws/install/ugv_chat_ai/lib/python3.10/site-packages:/home/bart/ugv_ws/build/ugv_bringup:/home/bart/ugv_ws/install/ugv_bringup/lib/python3.10/site-packages:/home/bart/ugv_ws/install/teb_msgs/local/lib/python3.10/dist-packages:/home/bart/ugv_ws/install/costmap_converter_msgs/local/lib/python3.10/dist-packages:/home/bart/ros2_ws/build/my_robot_controller:/home/bart/ros2_ws/install/my_robot_controller/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages', 'LC_NUMERIC': 'nl_NL.UTF-8', 'LC_PAPER': 'nl_NL.UTF-8', 'COLCON': '1', 'VTE_VERSION': '6800', 'CMAKE_PREFIX_PATH': '/home/bart/ugv_ws/install/vizanti:/home/bart/ugv_ws/install/vizanti_server:/home/bart/ugv_ws/install/vizanti_demos:/home/bart/ugv_ws/install/vizanti_msgs:/home/bart/ugv_ws/install/vizanti_cpp:/home/bart/ugv_ws/install/ugv_slam:/home/bart/ugv_ws/install/ugv_nav:/home/bart/ugv_ws/install/ugv_interface:/home/bart/ugv_ws/install/ugv_gazebo:/home/bart/ugv_ws/install/ugv_description:/home/bart/ugv_ws/install/ugv_base_node:/home/bart/ugv_ws/install/teb_msgs:/home/bart/ugv_ws/install/slam_gmapping:/home/bart/ugv_ws/install/robot_pose_publisher:/home/bart/ugv_ws/install/rf2o_laser_odometry:/home/bart/ugv_ws/install/openslam_gmapping:/home/bart/ugv_ws/install/explore_lite:/home/bart/ugv_ws/install/costmap_converter_msgs:/home/bart/ugv_ws/install/cartographer', 'UGV_MODEL': 'ugv_rover'}, 'shell': False}
+[0.600608] (-) TimerEvent: {}
+[0.700842] (-) TimerEvent: {}
+[0.743730] (ugv_custom) StdoutLine: {'line': b'running egg_info\n'}
+[0.744175] (ugv_custom) StdoutLine: {'line': b'writing ../../build/ugv_custom/ugv_custom.egg-info/PKG-INFO\n'}
+[0.744723] (ugv_custom) StdoutLine: {'line': b'writing dependency_links to ../../build/ugv_custom/ugv_custom.egg-info/dependency_links.txt\n'}
+[0.744961] (ugv_custom) StdoutLine: {'line': b'writing entry points to ../../build/ugv_custom/ugv_custom.egg-info/entry_points.txt\n'}
+[0.745046] (ugv_custom) StdoutLine: {'line': b'writing requirements to ../../build/ugv_custom/ugv_custom.egg-info/requires.txt\n'}
+[0.745094] (ugv_custom) StdoutLine: {'line': b'writing top-level names to ../../build/ugv_custom/ugv_custom.egg-info/top_level.txt\n'}
+[0.747181] (ugv_custom) StdoutLine: {'line': b"reading manifest file '../../build/ugv_custom/ugv_custom.egg-info/SOURCES.txt'\n"}
+[0.747921] (ugv_custom) StdoutLine: {'line': b"writing manifest file '../../build/ugv_custom/ugv_custom.egg-info/SOURCES.txt'\n"}
+[0.748226] (ugv_custom) StdoutLine: {'line': b'running build\n'}
+[0.748306] (ugv_custom) StdoutLine: {'line': b'running build_py\n'}
+[0.748361] (ugv_custom) StdoutLine: {'line': b'copying ugv_custom/drive_and_blink.py -> /home/bart/ugv_ws/build/ugv_custom/build/lib/ugv_custom\n'}
+[0.748561] (ugv_custom) StdoutLine: {'line': b'running install\n'}
+[0.748960] (ugv_custom) StdoutLine: {'line': b'running install_lib\n'}
+[0.749677] (ugv_custom) StdoutLine: {'line': b'copying /home/bart/ugv_ws/build/ugv_custom/build/lib/ugv_custom/drive_and_blink.py -> /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom\n'}
+[0.750278] (ugv_custom) StdoutLine: {'line': b'byte-compiling /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom/drive_and_blink.py to drive_and_blink.cpython-310.pyc\n'}
+[0.751095] (ugv_custom) StdoutLine: {'line': b'running install_data\n'}
+[0.751392] (ugv_custom) StdoutLine: {'line': b'running install_egg_info\n'}
+[0.752953] (ugv_custom) StdoutLine: {'line': b"removing '/home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom-0.0.0-py3.10.egg-info' (and everything under it)\n"}
+[0.753363] (ugv_custom) StdoutLine: {'line': b'Copying ../../build/ugv_custom/ugv_custom.egg-info to /home/bart/ugv_ws/install/ugv_custom/lib/python3.10/site-packages/ugv_custom-0.0.0-py3.10.egg-info\n'}
+[0.754017] (ugv_custom) StdoutLine: {'line': b'running install_scripts\n'}
+[0.770914] (ugv_custom) StdoutLine: {'line': b'Installing drive_and_blink script to /home/bart/ugv_ws/install/ugv_custom/lib/ugv_custom\n'}
+[0.771214] (ugv_custom) StdoutLine: {'line': b"writing list of installed files to '/home/bart/ugv_ws/build/ugv_custom/install.log'\n"}
+[0.789853] (ugv_custom) CommandEnded: {'returncode': 0}
+[0.797846] (ugv_custom) JobEnded: {'identifier': 'ugv_custom', 'rc': 0}
+[0.798345] (-) EventReactorShutdown: {}

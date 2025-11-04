@@ -1,0 +1,1 @@
+/home/bart/ugv_ws/build/ugv_base_node/ament_cmake_core/ugv_base_nodeConfig.cmake

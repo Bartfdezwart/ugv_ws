@@ -1,0 +1,1 @@
+/home/bart/ugv_ws/build/ugv_slam/ament_cmake_core/ugv_slamConfig.cmake

@@ -1,0 +1,28 @@
+[1.425s] Invoking command in '/home/bart/ugv_ws/build/ugv_tools': PYTHONPATH=/home/bart/ugv_ws/build/ugv_tools/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/bart/ugv_ws/install/ugv_tools/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/bart/ugv_ws/build/ugv_tools/build --no-deps symlink_data
+[1.861s] running develop
+[2.218s] running egg_info
+[2.218s] creating ugv_tools.egg-info
+[2.218s] writing ugv_tools.egg-info/PKG-INFO
+[2.218s] writing dependency_links to ugv_tools.egg-info/dependency_links.txt
+[2.218s] writing entry points to ugv_tools.egg-info/entry_points.txt
+[2.218s] writing requirements to ugv_tools.egg-info/requires.txt
+[2.219s] writing top-level names to ugv_tools.egg-info/top_level.txt
+[2.219s] writing manifest file 'ugv_tools.egg-info/SOURCES.txt'
+[2.222s] reading manifest file 'ugv_tools.egg-info/SOURCES.txt'
+[2.223s] writing manifest file 'ugv_tools.egg-info/SOURCES.txt'
+[2.225s] running build_ext
+[2.226s] Creating /home/bart/ugv_ws/install/ugv_tools/lib/python3.10/site-packages/ugv-tools.egg-link (link to .)
+[2.227s] Installing behavior_ctrl script to /home/bart/ugv_ws/install/ugv_tools/lib/ugv_tools
+[2.227s] Installing joy_ctrl script to /home/bart/ugv_ws/install/ugv_tools/lib/ugv_tools
+[2.228s] Installing keyboard_ctrl script to /home/bart/ugv_ws/install/ugv_tools/lib/ugv_tools
+[2.228s] 
+[2.228s] Installed /home/bart/ugv_ws/build/ugv_tools
+[2.231s] running symlink_data
+[2.231s] creating /home/bart/ugv_ws/install/ugv_tools/share/ament_index
+[2.231s] creating /home/bart/ugv_ws/install/ugv_tools/share/ament_index/resource_index
+[2.231s] creating /home/bart/ugv_ws/install/ugv_tools/share/ament_index/resource_index/packages
+[2.231s] symbolically linking /home/bart/ugv_ws/build/ugv_tools/resource/ugv_tools -> /home/bart/ugv_ws/install/ugv_tools/share/ament_index/resource_index/packages
+[2.231s] symbolically linking /home/bart/ugv_ws/build/ugv_tools/package.xml -> /home/bart/ugv_ws/install/ugv_tools/share/ugv_tools
+[2.232s] creating /home/bart/ugv_ws/install/ugv_tools/share/ugv_tools/launch
+[2.232s] symbolically linking /home/bart/ugv_ws/build/ugv_tools/launch/teleop_twist_joy.launch.py -> /home/bart/ugv_ws/install/ugv_tools/share/ugv_tools/launch
+[2.311s] Invoked command in '/home/bart/ugv_ws/build/ugv_tools' returned '0': PYTHONPATH=/home/bart/ugv_ws/build/ugv_tools/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/bart/ugv_ws/install/ugv_tools/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/bart/ugv_ws/build/ugv_tools/build --no-deps symlink_data
