@@ -3,6 +3,9 @@ flask
 mediapipe
 requests
 pygame
+
+# Added requirements
+wheel
 numpy<2
 opencv-python
 catkin_pkg
