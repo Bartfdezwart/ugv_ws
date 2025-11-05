@@ -314,14 +314,14 @@ class RerunLogging(Node):
             10
         )
 
-        self.image_subscription = self.create_subscription(
+        self.raw_image_subscription = self.create_subscription(
             msg.Image,
-            "/image",
+            "/image_raw",
             self.log_image,
             10,
         )
 
-        self.image_subscription = self.create_subscription(
+        self.preprocessed_image_subscription = self.create_subscription(
             msg.Image,
             "/linedetect_preprocessed_img",
             self.log_preprocessed_image,
@@ -360,7 +360,7 @@ class RerunLogging(Node):
         rr.set_time_nanos("ros_time", time_nanos)
 
         try:
-            rr.log("camera/image", rr.Image(cv_img, rr.ColorModel.BGR))
+            rr.log("camera/raw_image", rr.Image(cv_img, rr.ColorModel.BGR))
         except Exception as e:
             self.get_logger().error(f"Rerun logging failed: {e}")
 
@@ -396,7 +396,7 @@ class RerunLogging(Node):
         time_nanos = lines.header.stamp.sec * 1_000_000_000 + lines.header.stamp.nanosec
         rr.set_time_nanos("ros_time", time_nanos)
         rr.log(
-            "/".join(["camera/image/lines", line_name]),
+            "/".join(["lines", line_name]),
             rr.LineStrips2D(strips=line_strips, colors=[rgb_color]*len(line_strips))
         )
 
