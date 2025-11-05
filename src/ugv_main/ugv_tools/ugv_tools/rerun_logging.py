@@ -302,8 +302,15 @@ class RerunLogging(Node):
 
         self.lines_subscription = self.create_subscription(
             LineArray,
-            "/lines",
+            "/linedetect",
             self.log_lines,
+            10
+        )
+
+        self.top_lines_subscription = self.create_subscription(
+            LineArray,
+            "/linedetect_top",
+            self.log_top_lines,
             10
         )
 
@@ -351,6 +358,12 @@ class RerunLogging(Node):
             self.get_logger().error(f"Rerun logging failed: {e}")
 
     def log_lines(self, lines: LineArray):
+        self._log_lines(lines, (255, 0, 0))
+
+    def log_top_lines(self, lines: LineArray):
+        self._log_lines(lines, (0, 0, 255))
+
+    def _log_lines(self, lines: LineArray, rgb_color: tuple[int]):
         data = lines.data
 
         line_strips = []
@@ -366,7 +379,7 @@ class RerunLogging(Node):
         rr.set_time_nanos("ros_time", time_nanos)
         rr.log(
             "camera/image/lines",
-            rr.LineStrips2D(strips=line_strips, colors=[(255,0,0)]*len(line_strips))
+            rr.LineStrips2D(strips=line_strips, colors=[rgb_color]*len(line_strips))
         )
 
     

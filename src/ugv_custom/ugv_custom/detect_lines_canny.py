@@ -21,7 +21,7 @@ class DetectLinesCanny(Node):
         self.line_pub = self.create_publisher(LineArray, '/linedetect', 10)
 
         # Flat list of top line.
-        self.top_line_pub = self.create_publisher(Float32MultiArray, '/linedetect_top', 10)
+        self.top_line_pub = self.create_publisher(LineArray, '/linedetect_top', 10)
         
         # Bridge for changing format to cv2
         self.bridge = CvBridge()
@@ -80,7 +80,7 @@ class DetectLinesCanny(Node):
                     self.missed_frames = 0
 
                 # publish contender line
-                top_msg = Float32MultiArray()
+                top_msg = LineArray()
                 top_msg.data = [float(x1), float(y1), float(x2), float(y2)]
                 self.top_line_pub.publish(top_msg)
                 # self.get_logger().info("Tracking contender line")
@@ -89,7 +89,7 @@ class DetectLinesCanny(Node):
                 self.missed_frames += 1
                 if self.missed_frames > self.max_missed:
                     self.get_logger().warn("No line detected for a while — stopping rover.")
-                    self.top_line_pub.publish(Float32MultiArray(data=[]))
+                    self.top_line_pub.publish(LineArray(data=[]))
                     self.contender_line = None
 
 
