@@ -319,7 +319,7 @@ class RerunLogging(Node):
 
         self.bridge = CvBridge()
 
-        self.log_once()
+        # self.log_once()
 
     def move(self):
         rr.set_time_sequence("sequence", self.frame)
