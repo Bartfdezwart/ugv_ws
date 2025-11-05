@@ -23,6 +23,9 @@ class DetectLinesCanny(Node):
         # Flat list of top line.
         self.top_line_pub = self.create_publisher(LineArray, '/linedetect_top', 10)
         
+        self.preprocessed_img = self.create_publisher(Image, '/linedetect_preprocessed_img', 10)
+
+
         # Bridge for changing format to cv2
         self.bridge = CvBridge()
 
@@ -37,13 +40,18 @@ class DetectLinesCanny(Node):
             # Image preprocessing ---------------
             frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.equalizeHist(gray)  
-            _, thresh = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+            img_blur = cv2.GaussianBlur(gray, (3,3), 0) 
+            gray = cv2.equalizeHist(img_blur)  
+            _, thresh = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
+
+            preprocessed_msg = self.bridge.cv2_to_imgmsg(thresh, encoding='mono8')
+            self.preprocessed_img.publish(preprocessed_msg)
+
 
             # Line detection --------------------
-            edges = cv2.Canny(thresh, 100, 200)
+            edges = cv2.Canny(thresh, 160, 255)
             # TODO: tweak params for ceiling lights
-            lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=50, minLineLength=50, maxLineGap=10)
+            lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=50, minLineLength=80, maxLineGap=10)
             
             # Message publishing ----------------
             line_msg = LineArray()
