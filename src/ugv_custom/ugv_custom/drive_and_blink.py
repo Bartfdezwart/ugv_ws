@@ -42,17 +42,17 @@ class DriveAndBlink(Node):
 
     def blink_leds(self):
         elapsed = time.time() - self.start_time
-        if self.blink_count < 6:  # blink 3 times
+        if self.blink_count < 6:
             led_msg = Float32MultiArray()
 
             if int(elapsed * 2) % 2 == 0:
-                led_msg.data = [9.0, 0.0]  # ON
+                led_msg.data = [9.0, 0.0]
             else:
-                led_msg.data = [0.0, 0.0]  # OFF
+                led_msg.data = [0.0, 0.0]
             self.pub_led.publish(led_msg)
             self.blink_count += 0.1
         else:
-            led_msg.data = [0.0, 0.0]  # OFF
+            led_msg.data = [0.0, 0.0]
             self.pub_led.publish(led_msg)
             self.get_logger().info('Blink complete')
             rclpy.shutdown()

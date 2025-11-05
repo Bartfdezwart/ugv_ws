@@ -8,9 +8,9 @@ import cv2
 import numpy as np
 
 
-class DetectLines(Node):
+class DetectLinesCustom(Node):
     def __init__(self):
-        super().__init__('detect_lines')
+        super().__init__('detect_lines_custom')
         self.get_logger().info('UGV LineDetection node started.')
 
         # Subscribe to the camera
@@ -22,12 +22,6 @@ class DetectLines(Node):
         # Bridge for changing format to cv2
         self.bridge = CvBridge()
         
-    # TODO: 
-    # - Change white balance to detect ceiling light. 
-    # - Select 5 - 10 ?brightest? lines. 
-    # - Select longest from those, contender line, 
-    # - Publish contender line and keep detecting contender until no longer visisble for x frames.
-    # - Stop publishing line if no longer visible, send message to actuators to stop?
     def image_callback(self, msg):
         try:
             # Convert OpenCV format
@@ -35,12 +29,10 @@ class DetectLines(Node):
             # Convert to grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             # Detect edges
-            edges = cv2.Canny(gray, 100, 200)
-            # Hough Transform line detection
-            lines = cv2.HoughLinesP(
-                edges, rho=1, theta=np.pi/180, threshold=50,
-                minLineLength=50, maxLineGap=10
-            )
+
+            # TODO: own line detector
+            edges = []
+            lines = []
             
             # Prepare message
             line_msg = Float32MultiArray()
@@ -62,7 +54,7 @@ class DetectLines(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = DetectLines()
+    node = DetectLinesCustom()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
