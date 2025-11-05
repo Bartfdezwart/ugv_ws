@@ -321,6 +321,13 @@ class RerunLogging(Node):
             10,
         )
 
+        self.image_subscription = self.create_subscription(
+            msg.Image,
+            "/linedetect_preprocessed_img",
+            self.log_preprocessed_image,
+            10,
+        )
+
         self.frame = 0
         self.timer = self.create_timer(0.1, self.move)
 
@@ -354,6 +361,17 @@ class RerunLogging(Node):
 
         try:
             rr.log("camera/image", rr.Image(cv_img, rr.ColorModel.BGR))
+        except Exception as e:
+            self.get_logger().error(f"Rerun logging failed: {e}")
+
+    def log_preprocessed_image(self, image: msg.Image):
+        cv_img = self.bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
+
+        time_nanos = image.header.stamp.sec * 1_000_000_000 + image.header.stamp.nanosec
+        rr.set_time_nanos("ros_time", time_nanos)
+
+        try:
+            rr.log("camera/preprocessed_image", rr.Image(cv_img, rr.ColorModel.BGR))
         except Exception as e:
             self.get_logger().error(f"Rerun logging failed: {e}")
 
