@@ -14,21 +14,15 @@ class DetectLinesCanny(Node):
         super().__init__('detect_lines_canny')
         self.get_logger().info('UGV LineDetection node started.')
 
-        # Subscribe to the camera
         self.image_sub = self.create_subscription(Image, '/image_raw', self.image_callback, 10)
 
-        # Publisher: list of lines as flat float array [x1, y1, x2, y2, ...]
         self.line_pub = self.create_publisher(LineArray, '/linedetect', 10)
 
-        # Flat list of top line.
         self.top_line_pub = self.create_publisher(LineArray, '/linedetect_top', 10)
         
         self.preprocessed_img = self.create_publisher(Image, '/linedetect_preprocessed_img', 10)
 
-
-        # Bridge for changing format to cv2
         self.bridge = CvBridge()
-
 
         self.contender_line = None
         self.missed_frames = 0
@@ -58,14 +52,14 @@ class DetectLinesCanny(Node):
             data = []
 
             if lines is not None:
-                # flatten all lines for publication
+                # flatten lines
                 for line in lines:
                     x1, y1, x2, y2 = line[0]
                     data.extend([float(x1), float(y1), float(x2), float(y2)])
                 line_msg.data = data
                 self.line_pub.publish(line_msg)
 
-                # compute line midpoints for all
+                # compute line midpoints
                 line_midpoints = [((l[0][0] + l[0][2]) / 2, (l[0][1] + l[0][3]) / 2) for l in lines]
 
                 if self.contender_line is None:
@@ -91,7 +85,6 @@ class DetectLinesCanny(Node):
                 top_msg = LineArray()
                 top_msg.data = [float(x1), float(y1), float(x2), float(y2)]
                 self.top_line_pub.publish(top_msg)
-                # self.get_logger().info("Tracking contender line")
 
             else:
                 self.missed_frames += 1
