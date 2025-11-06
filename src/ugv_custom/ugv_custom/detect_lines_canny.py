@@ -14,6 +14,8 @@ class DetectLinesCanny(Node):
         super().__init__('detect_lines_canny')
         self.get_logger().info('UGV LineDetection node started.')
 
+        self._declare_parameters()
+
         self.image_sub = self.create_subscription(Image, '/image_raw', self.image_callback, 10)
 
         self.line_pub = self.create_publisher(LineArray, '/linedetect', 10)
@@ -27,14 +29,38 @@ class DetectLinesCanny(Node):
         self.contender_line = None
         self.missed_frames = 0
         self.max_missed = 20
-        
+    
+    def _declare_parameters(self):
+        # Parameter blur
+        self.declare_parameter("gaussian_blur", 3)
+
+        # Canny parameters
+        self.declare_parameter("canny_threshold1", 160)
+        self.declare_parameter("canny_threshold2", 225)
+
+        # Hough parameters
+        self.declare_parameter("hough_rho", 1)
+        self.declare_parameter("hough_theta", np.pi/180)
+        self.declare_parameter("hough_threshold", 50)
+        self.declare_parameter("hough_min_line_length", 80)
+        self.declare_parameter("hough_max_line_gap", 10)
 
     def image_callback(self, msg):
+        # Retrieve parameters as attributes
+        self.gaussian_blur = self.get_parameter("gaussian_blur").value
+        self.canny_threshold1 = self.get_parameter("canny_threshold1").value
+        self.canny_threshold2 = self.get_parameter("canny_threshold2").value
+        self.hough_rho = self.get_parameter("hough_rho").value
+        self.hough_theta = self.get_parameter("hough_theta").value
+        self.hough_threshold = self.get_parameter("hough_threshold").value
+        self.hough_min_line_length = self.get_parameter("hough_min_line_length").value
+        self.hough_max_line_gap = self.get_parameter("hough_max_line_gap").value
+
         try:
             # Image preprocessing ---------------
             frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            img_blur = cv2.GaussianBlur(gray, (3,3), 0) 
+            img_blur = cv2.GaussianBlur(gray, (self.gaussian_blur, self.gaussian_blur), 0) 
             gray = cv2.equalizeHist(img_blur)  
             _, thresh = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
 
@@ -43,9 +69,16 @@ class DetectLinesCanny(Node):
 
 
             # Line detection --------------------
-            edges = cv2.Canny(thresh, 160, 255)
+            edges = cv2.Canny(thresh, self.canny_threshold1, self.canny_threshold2)
             # TODO: tweak params for ceiling lights
-            lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=50, minLineLength=80, maxLineGap=10)
+            lines = cv2.HoughLinesP(
+                edges,
+                rho=self.hough_rho,
+                theta=self.hough_theta,
+                threshold=self.hough_threshold,
+                minLineLength=self.hough_min_line_length,
+                maxLineGap=self.hough_max_line_gap
+            )
             
             # Message publishing ----------------
             line_msg = LineArray()

@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from ugv_interface.msg import LineArray
 
-from pylsd2 import LineSegmentDetection
+# from pylsd2 import LineSegmentDetection
 import pyelsed
 
 
