@@ -22,7 +22,7 @@ class DetectLinesCustom(Node):
         self.top_line_pub = self.create_publisher(LineArray, '/linedetect_top', 10)
 
         processing_stages = ['gray', 'img_blur', 'equalized', 'thresh', 'dilated']
-        if self.get_parameter("log_processing").value == "all":
+        if self.get_parameter("log_preprocessing").value == "all":
             self.image_log_processing_stages = processing_stages
         else:
             self.image_log_processing_stages = processing_stages[-1:]
