@@ -24,6 +24,8 @@ class DetectLinesCustom(Node):
 
         self.bridge = CvBridge()
 
+        self.best_line = None
+
 
     def _declare_parameters(self):
         self.declare_parameter("gaussian_blur", 3)
@@ -74,7 +76,7 @@ class DetectLinesCustom(Node):
             # select top line.
             h, w = dilated.shape
             img_center = np.array([w / 2, h / 2])
-            best_line, min_dist = None, 1e9
+            best_line, min_dist = self.best_line, 1e9
 
             for l in merged_lines:
                 x1, y1, x2, y2 = l
@@ -93,7 +95,7 @@ class DetectLinesCustom(Node):
                     angle_diff = abs(new_angle - self.prev_top_angle)
                     angle_diff = min(angle_diff, 180 - angle_diff)
                     if angle_diff > 20:
-                        best_line = None
+                        best_line = self.best_line
                     else:
                         self.prev_top_angle = new_angle
                 else:
@@ -101,6 +103,7 @@ class DetectLinesCustom(Node):
 
             # publish best line
             if best_line is not None:
+                self.best_line = best_line
                 msg_top = LineArray()
                 msg_top.data = list(map(float, best_line))
                 msg_top.header = msg.header
