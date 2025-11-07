@@ -30,7 +30,7 @@ class DetectLinesCustom(Node):
         self.image_processing_publishers = {}
         for stage in self.image_log_processing_stages:
             self.image_processing_publishers[stage] = self.create_publisher(
-                Image, f"/{stage}", 10
+                Image, f"/image/{stage}", 10
             )
 
         self.bridge = CvBridge()

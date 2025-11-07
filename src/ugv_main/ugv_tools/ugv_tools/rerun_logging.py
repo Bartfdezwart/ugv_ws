@@ -66,7 +66,7 @@ class RerunLogging(Node):
         for stage in processing_stages:
             self.create_subscription(
                 msg.Image,
-                f"/image_{stage}",
+                f"/image/{stage}",
                 partial(self.log_image, image_name=stage),
                 10
             )
