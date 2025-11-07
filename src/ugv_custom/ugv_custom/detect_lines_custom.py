@@ -66,11 +66,11 @@ class DetectLinesCustom(Node):
 
             # publish preprocessed image
             if self.log_preprocessing == "all":
-                self.gray_pub.publish(self.bridge.cv2_to_imgmsg(gray, encoding='bgr8', header=msg.header))
-                self.img_blur_pub.publish(self.bridge.cv2_to_imgmsg(img_blur, encoding='bgr8', header=msg.header))
-                self.equalized_pub.publish(self.bridge.cv2_to_imgmsg(equalized, encoding='bgr8', header=msg.header))
-                self.thresh_pub.publish(self.bridge.cv2_to_imgmsg(thresh, encoding='bgr8', header=msg.header))
-                self.dilated_pub.publish(self.bridge.cv2_to_imgmsg(dilated, encoding='bgr8', header=msg.header))
+                self.image_processing_publishers["gray"].publish(self.bridge.cv2_to_imgmsg(gray, encoding='bgr8', header=msg.header))
+                self.image_processing_publishers["img_blur"].publish(self.bridge.cv2_to_imgmsg(img_blur, encoding='bgr8', header=msg.header))
+                self.image_processing_publishers["equalized"].publish(self.bridge.cv2_to_imgmsg(equalized, encoding='bgr8', header=msg.header))
+                self.image_processing_publishers["thresh"].publish(self.bridge.cv2_to_imgmsg(thresh, encoding='bgr8', header=msg.header))
+                self.image_processing_publishers["dilated"].publish(self.bridge.cv2_to_imgmsg(dilated, encoding='bgr8', header=msg.header))
 
             preprocessed_msg = self.bridge.cv2_to_imgmsg(dilated, encoding='mono8', header=msg.header)
             self.preprocessed_img.publish(preprocessed_msg)
