@@ -20,12 +20,25 @@ class DetectLinesCustom(Node):
         self.image_sub = self.create_subscription(Image, '/image_rect', self.image_callback, 10)
         self.line_pub = self.create_publisher(LineArray, '/linedetect', 10)
         self.top_line_pub = self.create_publisher(LineArray, '/linedetect_top', 10)
-        self.preprocessed_img = self.create_publisher(Image, '/linedetect_preprocessed_img', 10)
+
+        processing_stages = ['gray', 'img_blur', 'equalized', 'thresh', 'dilated']
+        if self.get_parameter("log_processing").value == "all":
+            self.image_log_processing_stages = processing_stages
+        else:
+            self.image_log_processing_stages = processing_stages[-1:]
+        
+        self.image_processing_publishers = {}
+        for stage in self.image_log_processing_stages:
+            self.image_log_processing_stages[stage] = self.create_publisher(
+                Image, f"/{stage}", 10
+            )
 
         self.bridge = CvBridge()
 
 
     def _declare_parameters(self):
+        self.declare_parameter("log_preprocessing", "last")
+
         self.declare_parameter("gaussian_blur", 3)
         self.declare_parameter("binary_threshold_lower", 220)
         self.declare_parameter("binary_threshold_upper", 255)
@@ -34,6 +47,7 @@ class DetectLinesCustom(Node):
 
     def image_callback(self, msg):
         try:
+            self.log_preprocessing = self.get_parameter("log_preprocessing").value
 
             self.gaussian_blur = self.get_parameter("gaussian_blur").value
             self.binary_threshold_lower = self.get_parameter("binary_threshold_lower").value
@@ -44,13 +58,20 @@ class DetectLinesCustom(Node):
             frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             img_blur = cv2.GaussianBlur(gray, (self.gaussian_blur, self.gaussian_blur), 0) 
-            gray = cv2.equalizeHist(img_blur)  
-            _, thresh = cv2.threshold(gray, self.binary_threshold_lower, self.binary_threshold_upper, cv2.THRESH_BINARY)
+            equalized = cv2.equalizeHist(img_blur)  
+            _, thresh = cv2.threshold(equalized, self.binary_threshold_lower, self.binary_threshold_upper, cv2.THRESH_BINARY)
             kernel = np.ones((self.opening_kernelsize, self.opening_kernelsize), np.uint8)
             erode = cv2.dilate(thresh, kernel, iterations=1)
             dilated = cv2.dilate(erode, kernel, iterations=1)
 
             # publish preprocessed image
+            if self.log_preprocessing == "all":
+                self.gray_pub.publish(self.bridge.cv2_to_imgmsg(gray, encoding='bgr8', header=msg.header))
+                self.img_blur_pub.publish(self.bridge.cv2_to_imgmsg(img_blur, encoding='bgr8', header=msg.header))
+                self.equalized_pub.publish(self.bridge.cv2_to_imgmsg(equalized, encoding='bgr8', header=msg.header))
+                self.thresh_pub.publish(self.bridge.cv2_to_imgmsg(thresh, encoding='bgr8', header=msg.header))
+                self.dilated_pub.publish(self.bridge.cv2_to_imgmsg(dilated, encoding='bgr8', header=msg.header))
+
             preprocessed_msg = self.bridge.cv2_to_imgmsg(dilated, encoding='mono8', header=msg.header)
             self.preprocessed_img.publish(preprocessed_msg)
 

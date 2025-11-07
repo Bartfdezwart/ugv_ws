@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+from functools import partial
 from pathlib import Path
 
 import rclpy
@@ -60,6 +61,15 @@ class RerunLogging(Node):
             self.log_preprocessed_image,
             10,
         )
+
+        processing_stages = ['gray', 'img_blur', 'equalized', 'thresh', 'dilated']
+        for stage in processing_stages:
+            self.create_subscription(
+                msg.Image,
+                f"/image_{stage}",
+                partial(self.log_image, image_name=stage),
+                10
+            )
 
         self.bridge = CvBridge()
 
