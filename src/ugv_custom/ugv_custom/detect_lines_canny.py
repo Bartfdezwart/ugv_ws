@@ -64,7 +64,7 @@ class DetectLinesCanny(Node):
             gray = cv2.equalizeHist(img_blur)  
             _, thresh = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
 
-            preprocessed_msg = self.bridge.cv2_to_imgmsg(thresh, encoding='mono8')
+            preprocessed_msg = self.bridge.cv2_to_imgmsg(thresh, encoding='mono8', header=msg.header)
             self.preprocessed_img.publish(preprocessed_msg)
 
 
@@ -90,6 +90,7 @@ class DetectLinesCanny(Node):
                     x1, y1, x2, y2 = line[0]
                     data.extend([float(x1), float(y1), float(x2), float(y2)])
                 line_msg.data = data
+                line_msg.header = msg.header
                 self.line_pub.publish(line_msg)
 
                 # compute line midpoints
@@ -117,6 +118,7 @@ class DetectLinesCanny(Node):
                 # publish contender line
                 top_msg = LineArray()
                 top_msg.data = [float(x1), float(y1), float(x2), float(y2)]
+                top_msg.header = msg.header
                 self.top_line_pub.publish(top_msg)
 
             else:
