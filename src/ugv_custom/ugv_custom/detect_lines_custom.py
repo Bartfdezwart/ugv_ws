@@ -28,8 +28,8 @@ class DetectLinesCustom(Node):
             self.image_log_processing_stages = processing_stages[-1:]
         
         self.image_processing_publishers = {}
-        for stage in processing_stages:
-            self.image_log_processing_stages[stage] = self.create_publisher(
+        for stage in self.image_log_processing_stages:
+            self.image_processing_publishers[stage] = self.create_publisher(
                 Image, f"/{stage}", 10
             )
 
