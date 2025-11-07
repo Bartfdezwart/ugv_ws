@@ -51,7 +51,7 @@ class DetectLinesCustom(Node):
             dilated = cv2.dilate(erode, kernel, iterations=1)
 
             # publish preprocessed image
-            preprocessed_msg = self.bridge.cv2_to_imgmsg(dilated, encoding='mono8')
+            preprocessed_msg = self.bridge.cv2_to_imgmsg(dilated, encoding='mono8', header=msg.header)
             self.preprocessed_img.publish(preprocessed_msg)
 
             # detect lines
@@ -68,6 +68,7 @@ class DetectLinesCustom(Node):
                 x1, y1, x2, y2 = line[0], line[1], line[2], line[3]
                 data.extend([float(x1), float(y1), float(x2), float(y2)])
             line_msg.data = data
+            line_msg.header = msg.header
             self.line_pub.publish(line_msg)
 
             # select top line.
@@ -102,6 +103,7 @@ class DetectLinesCustom(Node):
             if best_line is not None:
                 msg_top = LineArray()
                 msg_top.data = list(map(float, best_line))
+                msg_top.header = msg.header
                 self.top_line_pub.publish(msg_top)
 
         except Exception as e:
