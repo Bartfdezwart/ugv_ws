@@ -22,6 +22,7 @@ class FollowLine(Node):
         self._declare_parameters()
 
         self.cam_center = []
+        self.cmd_current = [0.0, 0.0]
 
     def _declare_parameters(self):
         self.declare_parameter("speed", 0.2)
@@ -43,7 +44,6 @@ class FollowLine(Node):
             langle = self._line_angle([x1, y1, x2, y2])
             # self.get_logger().info(f"{langle}")
         
-
             # make line very long (vector)
             vx, vy = np.cos(langle), np.sin(langle)
             x3, y3 = x1 - 1000*vx, y1 - 1000*vy
@@ -64,28 +64,36 @@ class FollowLine(Node):
 
             cmd = Twist()
 
-            if 80 <= abs(angle_to_line) <= 100 and dist < 30:
+            if 80 <= abs(angle_to_line) <= 100 and dist < 20:
+                self.cmd_new = [self.speed, 0.0]
                 cmd.linear.x = self.speed
                 cmd.angular.z = 0.0
                 self.get_logger().info("Line perpendicular and close")
             elif -180 <= angle_to_line < -90:
+                self.cmd_new = [0.0, 0.5]
                 cmd.linear.x = 0.0
                 cmd.angular.z = 0.5
                 self.get_logger().info("Line in bottomleft")
             elif -90 <= angle_to_line < 0:
+                self.cmd_new= [self.speed, -0.4]
                 cmd.linear.x = self.speed
                 cmd.angular.z = -0.4
                 self.get_logger().info("Line in topleft")
             elif 0 <= angle_to_line < 90:
+                self.cmd_new = [self.speed, 0.4]
                 cmd.linear.x = self.speed
                 cmd.angular.z = 0.4
                 self.get_logger().info("Line in topright")
             else:
+                self.cmd_new = [0.0, -0.5]
                 cmd.linear.x = 0.0
                 cmd.angular.z = -0.5
                 self.get_logger().info("Line in bottomright")
 
-            self.pub_cmd.publish(cmd)
+            if (self.cmd_new != self.cmd_current):
+                self.pub_cmd.publish(cmd)
+            self.cmd_current = self.cmd_new
+
 
         except Exception as e:
             self.get_logger().error(f"drive error: {e}")
