@@ -1,6 +1,10 @@
 build/
 install/
 log/
+
 rover_venv/
+
 bags/
+rerun_logs/
+
 .vscode
