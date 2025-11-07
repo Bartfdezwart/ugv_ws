@@ -36,7 +36,7 @@ class UgvDriver(Node):
         self.led_ctrl_sub = self.create_subscription(Float32MultiArray, 'ugv/led_ctrl', self.led_ctrl_callback, 10)
 
         # Subscribe to voltage data (voltage topic)
-        self.voltage_sub = self.create_subscription(Float32, 'voltage', self.voltage_callback, 10)
+        # self.voltage_sub = self.create_subscription(Float32, 'voltage', self.voltage_callback, 10)
 
     # Callback for processing velocity commands
     def cmd_vel_callback(self, msg):
