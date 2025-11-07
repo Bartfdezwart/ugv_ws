@@ -65,9 +65,7 @@ class FollowLine(Node):
             cmd = Twist()
 
             if 80 <= abs(angle_to_line) <= 100 and dist < 20:
-
                 self.cmd_new = [self.speed, 0.0]
-
                 cmd.linear.x = self.speed
                 cmd.angular.z = 0.0
                 self.get_logger().info("Line perpendicular and close")
@@ -103,6 +101,10 @@ class FollowLine(Node):
     def _line_angle(self, line):
         return np.arctan2(line[3] - line[1], line[2] - line[0])
 
+    def stop(self):
+        twist = Twist()
+        self.pub_cmd.publish(twist)
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -110,7 +112,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        pass
+        node.stop()
     node.destroy_node()
     rclpy.shutdown()
 
