@@ -41,49 +41,51 @@ class FollowLine(Node):
 
             x1, y1, x2, y2 = msg.data[0], msg.data[1], msg.data[2], msg.data[3]
             langle = self._line_angle([x1, y1, x2, y2])
+            # self.get_logger().info(f"{langle}")
         
 
-            # make line very long
+            # make line very long (vector)
             vx, vy = np.cos(langle), np.sin(langle)
             x3, y3 = x1 - 1000*vx, y1 - 1000*vy
             x4, y4 = x2 + 1000*vx, y2 + 1000*vy
-
-            # compute distance from image center to this vector
+            
+            # compute distance from image center to the vector
             cx, cy = self.cam_center
             num = abs((y4 - y3)*cx - (x4 - x3)*cy + x4*y3 - y4*x3)
             den = np.hypot(y4 - y3, x4 - x3)
             dist = num / den
-            self.get_logger().info(f"f{dist}")
+            self.get_logger().info(f"{dist}")
 
-            # get angle between center and vector.
-            mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-            dx, dy = mx - cx, cy - my
-            angle_to_line = np.degrees(np.arctan2(dy, dx))
+            # compute angle from center to line
+            dot = ((x1 + x2)/2 - cx)*(-np.sin(langle)) + ((y1 + y2)/2 - cy)*np.cos(langle)
+            sign = np.sign(dot)
+            angle_to_line = np.degrees(np.arctan2(sign * np.cos(langle), sign * -np.sin(langle)))
+            self.get_logger().info(f"{angle_to_line}")
 
-
-            # drive based on angle
             cmd = Twist()
- 
-            # top-left
-            if dx < 0 and dy > 0:
+
+            if 80 <= abs(angle_to_line) <= 100 and dist < 30:
                 cmd.linear.x = self.speed
-                cmd.angular.z = -0.4
-            # top-right
-            elif dx > 0 and dy > 0:  
-                cmd.linear.x = self.speed
-                cmd.angular.z = 0.4
-            # bottom-left
-            elif dx < 0 and dy < 0:  
+                cmd.angular.z = 0.0
+                self.get_logger().info("Line perpendicular and close")
+            elif -180 <= angle_to_line < -90:
                 cmd.linear.x = 0.0
                 cmd.angular.z = 0.5
-            # bottom-right
-            else:  
+                self.get_logger().info("Line in bottomleft")
+            elif -90 <= angle_to_line < 0:
+                cmd.linear.x = self.speed
+                cmd.angular.z = -0.4
+                self.get_logger().info("Line in topleft")
+            elif 0 <= angle_to_line < 90:
+                cmd.linear.x = self.speed
+                cmd.angular.z = 0.4
+                self.get_logger().info("Line in topright")
+            else:
                 cmd.linear.x = 0.0
                 cmd.angular.z = -0.5
+                self.get_logger().info("Line in bottomright")
 
             self.pub_cmd.publish(cmd)
-            self.get_logger().info(f"dist={dist:.1f}, angle={angle_to_line:.1f}, cmd=({cmd.linear.x:.2f},{cmd.angular.z:.2f})")
-
 
         except Exception as e:
             self.get_logger().error(f"drive error: {e}")
