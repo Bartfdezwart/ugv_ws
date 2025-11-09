@@ -109,10 +109,7 @@ class FollowLine(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = FollowLine()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.stop()
+    rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
 
