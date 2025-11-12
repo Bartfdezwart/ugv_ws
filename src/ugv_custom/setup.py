@@ -27,6 +27,8 @@ setup(
             'drive_and_blink = ugv_custom.drive_and_blink:main',
             'detect_lines_canny = ugv_custom.detect_lines_canny:main',
             'detect_lines_custom = ugv_custom.detect_lines_custom:main',
+            'detect_lines_select = ugv_custom.detect_lines_select:main',
+            'detect_markers = ugv_custom.detect_markers:main',
             'follow_line = ugv_custom.follow_line:main',
         ],
     },
