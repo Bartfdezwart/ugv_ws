@@ -8,3 +8,5 @@ bags/
 rerun_logs/
 
 .vscode
+
+__pycache__

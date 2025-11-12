@@ -19,7 +19,8 @@ class ApriltagCtrl(Node):
         # Create a CvBridge object to convert between ROS Image messages and OpenCV images
         self.bridge = CvBridge()
         # Create an apriltag detector object
-        self.detector = apriltag("tag36h11")
+        # self.detector = apriltag("tag36h11")
+        self.detector = apriltag("tagStandard41h12")
         
     def detect_apritag(self, frame):
 
@@ -64,7 +65,7 @@ class ApriltagCtrl(Node):
 def main(args=None):
     # Initialize the ROS client library
     rclpy.init(args=args)
-    apriltag_ctrl = Apriltagctrl()
+    # apriltag_ctrl = Apriltagctrl()
     # Create an instance of the ApriltagCtrl node
     apriltag_ctrl = ApriltagCtrl()
     # Spin the node

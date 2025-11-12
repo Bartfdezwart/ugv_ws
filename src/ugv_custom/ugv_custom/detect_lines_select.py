@@ -19,7 +19,7 @@ class DetectLinesSelect(Node):
 
         self._declare_parameters()
 
-        self.image_sub = self.create_subscription(Image, '/image_rect', self.image_callback, 10)
+        self.image_sub = self.create_subscription(Image, '/image_raw', self.image_callback, 10)
         self.line_pub = self.create_publisher(LineArray, '/linedetect', 10)
         self.top_line_pub = self.create_publisher(LineArray, '/linedetect_top', 10)
         self.preprocessed_img = self.create_publisher(Image, '/linedetect_preprocessed_img', 10)

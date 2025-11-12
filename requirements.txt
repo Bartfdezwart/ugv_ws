@@ -15,4 +15,5 @@ rerun-sdk==0.22
 urdf_parser_py
 trimesh
 typeguard
+apriltag
 git+https://github.com/iago-suarez/ELSED.git
