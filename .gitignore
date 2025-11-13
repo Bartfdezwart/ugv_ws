@@ -9,4 +9,4 @@ rerun_logs/
 
 .vscode
 
-__pycache__
+src/ugv_main/ugv_tools/ugv_tools/__pycache__/
