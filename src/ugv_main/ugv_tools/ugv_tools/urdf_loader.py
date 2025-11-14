@@ -99,9 +99,9 @@ class URDFLogger:
 
     def log(self, recording: rr.RecordingStream) -> None:
         """Log a URDF file to Rerun."""
-        for joint in self.urdf.joints:
-            entity_path = self.joint_entity_path(joint)
-            self.log_joint(entity_path, joint, recording)
+        # for joint in self.urdf.joints:
+        #     entity_path = self.joint_entity_path(joint)
+        #     self.log_joint(entity_path, joint, recording)
 
         for link in self.urdf.links:
             entity_path = self.link_entity_path(link)
@@ -127,11 +127,15 @@ class URDFLogger:
         #     rotation = st.Rotation.from_euler("xyz", joint.origin.rpy).as_matrix()
         transform = origin_to_transform(joint.origin)
 
+        static = True
+        if "pt_link" in entity_path.split("/")[-1]:
+            static = False
+
         if transform is not None:
             recording.log(
                 entity_path,
                 transform,
-                static=True,
+                static=static,
             )
 
     def log_visual(

@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 import datetime
+from functools import partial
 from pathlib import Path
 
+import numpy as np
 import rclpy
+import rerun as rr
+from apriltag_msgs.msg import AprilTagDetectionArray
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs import msg
+from sensor_msgs.msg import CompressedImage, Image, JointState
+from geometry_msgs.msg import Pose2D
 from ugv_interface.msg import LineArray
 
-import rerun as rr
 from ugv_tools.urdf_loader import URDFLogger
 
 # The root is the ugv_ws/
-WS_ROOT = Path("~/ugv_ws").expanduser()
-# The docker has a slightly different workspace root
-if not WS_ROOT.exists():
-    WS_ROOT = Path("/home/ws/ugv_ws")
+WS_ROOT = Path(__file__).parents[6]
+if WS_ROOT.parts[-1] != "ugv_ws":
+    raise NotImplementedError
 
 
 class RerunLogging(Node):
@@ -39,33 +42,64 @@ class RerunLogging(Node):
             )
             return
 
-        self.lines_subscription = self.create_subscription(
-            LineArray, "/linedetect", self.log_detected_lines, 10
-        )
-
-        self.top_lines_subscription = self.create_subscription(
-            LineArray, "/linedetect_top", self.log_best_lines, 10
-        )
-
-        self.raw_image_subscription = self.create_subscription(
-            msg.Image,
-            "/image_raw",
-            self.log_raw_image,
+        # Image subscribers
+        self.compressed_rect_image_sub = self.create_subscription(
+            CompressedImage,
+            "/image_rect/compressed",
+            partial(self.log_compressed_image, image_name="rect"),
             10,
         )
 
-        self.preprocessed_image_subscription = self.create_subscription(
-            msg.Image,
-            "/linedetect_preprocessed_img",
-            self.log_preprocessed_image,
+        self.compressed_preprocessed_image_sub = self.create_subscription(
+            CompressedImage,
+            "/image_rect/preprocessed",
+            partial(self.log_compressed_image, image_name="preprocessed"),
             10,
         )
+
+        # Movement update subscribers
+        self.robot_pose_sub = self.create_subscription(
+            Pose2D,
+            "/robot_pose",
+            self.log_robot_pose,
+            10,
+        )
+
+        self.camera_pose_sub = self.create_subscription(
+            JointState,
+            "/ugv/joint_states",
+            self.log_camera_pose,
+            10
+        )
+
+        # Detection subscribers
+        self.top_lines_sub = self.create_subscription(
+            LineArray,
+            "/linedetect",
+            partial(self.log_lines, line_name="detected_lines", rgb_color=(255, 0, 0)),
+            10,
+        )
+
+        self.top_lines_sub = self.create_subscription(
+            LineArray,
+            "/linedetect_top",
+            partial(self.log_lines, line_name="best_lines", rgb_color=(0, 0, 255)),
+            10,
+        )
+
+        self.apriltags_sub = self.create_subscription(
+            AprilTagDetectionArray,
+            "/apriltags",
+            self.log_april_tag,
+            10,
+        )
+        self.clear_apriltags_timer = self.create_timer(0.2, self.clear_apriltags)
+        self.apriltags_are_cleared = True
 
         self.bridge = CvBridge()
 
-        # self.frame = 0
-        # self.timer = self.create_timer(0.1, self.move)
-        # self.log_urdf()
+        self.log_urdf()
+        self.log_field()
 
     def init_stream_sink(self):
         self.declare_parameter("rerun_ip", "127.0.0.1")
@@ -109,33 +143,84 @@ class RerunLogging(Node):
         self.get_logger().info(f"logging data to `{log_file_path}`")
 
     def log_urdf(self):
-        urdf_folder = Path("/home/rick/ugv_ws/src/ugv_main/ugv_description/urdf/")
+        urdf_folder = WS_ROOT / "src/ugv_main/ugv_description/urdf"
         rover_urdf = urdf_folder / "ugv_rover.urdf"
 
-        urdf_logger = URDFLogger(rover_urdf, "rover")
+        urdf_logger = URDFLogger(rover_urdf, "world/rover")
         recording_stream = rr.get_global_data_recording()
         urdf_logger.log(recording_stream)
 
-    def log_image(self, image: msg.Image, image_name: str):
+        for joint in urdf_logger.urdf.joints:
+            entity_path = urdf_logger.joint_entity_path(joint)
+            urdf_logger.log_joint(entity_path, joint, recording_stream)
+
+    def log_field(self):
+        field_path = WS_ROOT / "assets" / "field.glb"
+        rr.log("/world/field", rr.Asset3D(path=field_path), static=True)
+
+    def log_image(self, image: Image, image_name: str):
         cv_img = self.bridge.imgmsg_to_cv2(image, desired_encoding="bgr8")
 
         time_nanos = image.header.stamp.sec * 1_000_000_000 + image.header.stamp.nanosec
         rr.set_time_nanos("ros_time", time_nanos)
         rr.log(f"camera/{image_name}", rr.Image(cv_img, rr.ColorModel.BGR))
 
-    def log_raw_image(self, image: msg.Image):
-        cv_img = self.bridge.imgmsg_to_cv2(image, desired_encoding="bgr8")
+    def log_compressed_image(
+        self, compressed_image: CompressedImage, image_name: str
+    ):
+        cv_img = self.bridge.compressed_imgmsg_to_cv2(
+            compressed_image, desired_encoding="bgr8"
+        )
 
-        time_nanos = image.header.stamp.sec * 1_000_000_000 + image.header.stamp.nanosec
+        time_nanos = (
+            compressed_image.header.stamp.sec * 1_000_000_000
+            + compressed_image.header.stamp.nanosec
+        )
         rr.set_time_nanos("ros_time", time_nanos)
-        rr.log("camera/raw_image", rr.Image(cv_img, rr.ColorModel.BGR))
+        rr.log(f"camera/compressed/{image_name}", rr.Image(cv_img, rr.ColorModel.BGR))
 
-    def log_preprocessed_image(self, image: msg.Image):
-        cv_img = self.bridge.imgmsg_to_cv2(image, desired_encoding="bgr8")
+    def log_camera_pose(self, joint_states: JointState):
+        try:
+            index = joint_states.name.index("pt_base_link_to_pt_link1")
+            angle = rr.Angle(rad=joint_states.position[index])
+            rr.log(
+            "world/rover/base_footprint/base_link/pt_base_link/pt_link1",
+            rr.Transform3D(
+                clear=False,
+                rotation=rr.RotationAxisAngle(axis=(0, 0, 1), angle=angle),
+            ),
+        )
+        # list.index(a) gives a ValueError when `a` can not be found in `list`
+        except ValueError:
+            pass
 
-        time_nanos = image.header.stamp.sec * 1_000_000_000 + image.header.stamp.nanosec
-        rr.set_time_nanos("ros_time", time_nanos)
-        rr.log("camera/preprocessed_image", rr.Image(cv_img, rr.ColorModel.BGR))
+        try:
+            index = joint_states.name.index("pt_link1_to_pt_link2")
+            angle = rr.Angle(rad=joint_states.position[index])
+            rr.log(
+            "world/rover/base_footprint/base_link/pt_base_link/pt_link1/pt_link2",
+            rr.Transform3D(
+                clear=False,
+                rotation=rr.RotationAxisAngle(axis=(0, -1, 0), angle=angle),
+            ),
+        )
+        # list.index(a) gives a ValueError when `a` can not be found in `list`
+        except ValueError:
+            pass
+
+    def log_robot_pose(self, pose: Pose2D):
+        x = pose.x
+        y = pose.y
+        yaw = pose.theta
+
+        rr.log(
+            "world/rover",
+            rr.Transform3D(
+                translation=(x, y, 0),
+                rotation=rr.RotationAxisAngle((0,0,1), rr.Angle(rad=yaw))
+            )
+        )
+
 
     def log_lines(self, lines: LineArray, line_name: str, rgb_color: tuple[int]):
         data = lines.data
@@ -156,18 +241,50 @@ class RerunLogging(Node):
             rr.LineStrips2D(strips=line_strips, colors=[rgb_color] * len(line_strips)),
         )
 
-    def log_detected_lines(self, lines: LineArray):
-        self.log_lines(lines, "detected_lines", (255, 0, 0))
-
-    def log_best_lines(self, lines: LineArray):
-        self.log_lines(lines, "best_lines", (0, 0, 255))
-
-    def log_movement(self):
-        rr.set_time_sequence("sequence", self.frame)
-        self.frame += 1
-        rr.log(
-            "rover", rr.Transform3D(clear=False, translation=(self.frame * 0.1, 0, 0))
+    def log_april_tag(self, apriltags: AprilTagDetectionArray):
+        time_nanos = (
+            apriltags.header.stamp.sec * 1_000_000_000 + apriltags.header.stamp.nanosec
         )
+        rr.set_time_nanos("ros_time", time_nanos)
+
+        centers = []
+        lines = []
+        half_sizes = []
+        labels = []
+        for tag in apriltags.detections:
+            center = np.array((tag.centre.x, tag.centre.y))
+
+            corners = np.array([(corner.x, corner.y) for corner in tag.corners])
+            lines.append(np.vstack([corners, corners[0]]))
+
+            min_xy = corners.min(axis=0)
+            max_xy = corners.max(axis=0)
+            half_size = (max_xy - min_xy) / 2.0
+
+            centers.append(center)
+            half_sizes.append(half_size)
+            labels.append(f"Tag {tag.id}")
+
+        # Log detected apriltags
+        rr.log(
+            "apriltag",
+            rr.LineStrips2D(
+                lines,
+                colors=[(0, 255, 0)] * len(lines),
+                labels=labels,
+                show_labels=True,
+            ),
+        )
+
+        # Reset the clear apriltags timer
+        self.clear_apriltags_timer.reset()
+        self.apriltags_are_cleared = False
+
+    def clear_apriltags(self):
+        if not self.apriltags_are_cleared:
+            # Clear the apriltag entity
+            rr.log("apriltag", rr.Clear(recursive=False))
+            self.apriltags_are_cleared = True
 
 
 def main(args=None):
