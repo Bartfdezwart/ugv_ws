@@ -25,12 +25,12 @@ class ApriltagCtrl(Node):
         self.detector = apriltag("tagStandard41h12")
         
         # self.focal_length = 554.256  # Focal length in pixels
-        # self.focal_length = 413.6420  # Focal length in pixels
-        self.focal_length = 289.43385   # Focal length in pixels
+        self.focal_length = 413.6420  # Focal length in pixels
+        # self.focal_length = 289.43385   # Focal length in pixels
         
-        # self.tag_width = 0.158  # Tag width in meters
+        self.tag_width = 0.158  # Tag width in meters
         # self.tag_width = 0.165  # Tag width in meters
-        self.tag_width = 0.58  # Small tag width in meters
+        # self.tag_width = 0.58  # Small tag width in meters
         
         self.intrinsic_params = np.array([[289.11451,   0.     , 347.23664],
                                           [0.     , 289.75319, 235.67429],
@@ -90,7 +90,8 @@ class ApriltagCtrl(Node):
             width_in_img = np.linalg.norm(corners[0] - corners[1]) + np.linalg.norm(corners[0] - corners[1]) / 2
             detect_distance = (self.tag_width * self.focal_length) / width_in_img
             # detect_distance += 0.11  # Current error margin calibration to camera lens
-            detect_distance /= 5
+            # detect_distance /= 5
+            detect_distance *= 1.5
             detect_distance -= 0.02  # Current error margin calibration to camera lens
             
             # rvec, tvec, _ = cv2.solvePnP(self.tag_points_3d,
@@ -104,7 +105,7 @@ class ApriltagCtrl(Node):
             # Print the ID and center of the apriltag
             print(f'Tag ID: {r["id"]}, Center: ({center_x}, {center_y})')
             print(f'Estimated distance: {detect_distance:.2f} meters')
-            # print(r)
+            print(r)
 
         # Convert the OpenCV image back to a ROS Image message
         frame = cv2.resize(frame, (frame.shape[1] // scale, frame.shape[0] // scale))
