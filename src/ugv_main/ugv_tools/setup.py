@@ -28,6 +28,7 @@ setup(
             'behavior_ctrl = ugv_tools.behavior_ctrl:main',
             'view_lines = ugv_tools.view_lines:main',
             'rerun_logging = ugv_tools.rerun_logging:main',
+            'snapshot = ugv_tools.snapshot:main',
         ],
     },
 )
