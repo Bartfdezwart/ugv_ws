@@ -24,6 +24,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/MapSave.srv"
   "action/Behavior.action"
   "msg/LineArray.msg"
+  "msg/Point.msg"
+  "msg/AprilTag.msg"
+  "msg/AprilTagArray.msg"
   DEPENDENCIES std_msgs
 )
 #ament_target_dependencies(

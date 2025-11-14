@@ -1,12 +1,13 @@
 import argparse
+
 import cv2
 import numpy as np
 import rclpy
 from apriltag import apriltag
-from apriltag_msgs.msg import AprilTagDetection, AprilTagDetectionArray, Point
 from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage, Image
+from ugv_interface.msg import AprilTag, AprilTagArray, Point
 
 
 class ApriltagCtrl(Node):
@@ -21,18 +22,18 @@ class ApriltagCtrl(Node):
         # Create a publisher to the apriltag_ctrl/result topic
         self.apriltag_ctrl_publisher = self.create_publisher(Image, '/apriltag_ctrl/result', 10)
         # Create a publisher to publish april tags
-        self.apriltags_publisher = self.create_publisher(AprilTagDetectionArray, '/apriltags', 10)
+        self.apriltags_publisher = self.create_publisher(AprilTagArray, '/apriltags', 10)
         # Create a CvBridge object to convert between ROS Image messages and OpenCV images
         self.bridge = CvBridge()
         # Create an apriltag detector object
         # self.detector = apriltag("tag36h11")
         self.apriltag_family = "tagStandard41h12"
         self.detector = apriltag(self.apriltag_family)
-        
+
     def detect_apritag(self, frame):
 
         return type
-   
+
     def image_callback(self, msg):
 
         # Convert the ROS Image message to an OpenCV image
@@ -65,16 +66,16 @@ class ApriltagCtrl(Node):
 
         # Detect apriltags in the image
         results = self.detector.detect(gray)
-        
+
         frame = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
         # Publish the found april tags
         if results:
             self.apriltags_publisher.publish(
-                AprilTagDetectionArray(
+                AprilTagArray(
                     header=msg.header,
                     detections=[
-                        AprilTagDetection(
+                        AprilTag(
                             family = self.apriltag_family,
                             id=detection["id"],
                             hamming=detection["hamming"],

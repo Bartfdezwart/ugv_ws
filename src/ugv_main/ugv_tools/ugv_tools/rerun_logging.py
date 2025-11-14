@@ -6,12 +6,11 @@ from pathlib import Path
 import numpy as np
 import rclpy
 import rerun as rr
-from apriltag_msgs.msg import AprilTagDetectionArray
 from cv_bridge import CvBridge
+from geometry_msgs.msg import Pose2D
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage, Image, JointState
-from geometry_msgs.msg import Pose2D
-from ugv_interface.msg import LineArray
+from ugv_interface.msg import AprilTagArray, LineArray
 
 from ugv_tools.urdf_loader import URDFLogger
 
@@ -88,7 +87,7 @@ class RerunLogging(Node):
         )
 
         self.apriltags_sub = self.create_subscription(
-            AprilTagDetectionArray,
+            AprilTagArray,
             "/apriltags",
             self.log_april_tag,
             10,
@@ -241,7 +240,7 @@ class RerunLogging(Node):
             rr.LineStrips2D(strips=line_strips, colors=[rgb_color] * len(line_strips)),
         )
 
-    def log_april_tag(self, apriltags: AprilTagDetectionArray):
+    def log_april_tag(self, apriltags: AprilTagArray):
         time_nanos = (
             apriltags.header.stamp.sec * 1_000_000_000 + apriltags.header.stamp.nanosec
         )
