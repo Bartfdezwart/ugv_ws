@@ -11,7 +11,7 @@ import cv2
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage
 
 
 def find_highest_snapshot_id(basename: str, folder_path: Path):
@@ -40,8 +40,8 @@ class Snapshot(Node):
         self.bridge = CvBridge()
 
         self.image_sub = self.create_subscription(
-            Image,
-            "/image",
+            CompressedImage,
+            "/image/compressed",
             self.image_callback,
             10,
         )
@@ -68,10 +68,14 @@ class Snapshot(Node):
         # Return the key
         return key
 
-    def image_callback(self, image: Image):
-        self.latest_image = self.bridge.imgmsg_to_cv2(image, desired_encoding="bgr8")
+    def image_callback(self, image: CompressedImage):
+        self.latest_image = self.bridge.compressed_imgmsg_to_cv2(image, desired_encoding="bgr8")
 
     def save_latest_image(self, img_dir: Path):
+        if self.latest_image is None:
+            self.get_logger().info("No image received to save.")
+            return
+
         if self.latest_image is not None:
             self.img_idx += 1
 
