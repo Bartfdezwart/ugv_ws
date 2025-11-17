@@ -28,6 +28,8 @@ setup(
             'kcf_track = ugv_vision.kcf_track:main',
             'gesture_ctrl = ugv_vision.gesture_ctrl:main',
             'apriltag_detector = ugv_vision.apriltag_detector:main',
+            'apriltag_distance = ugv_vision.apriltag_distance:main',
+            'apriltag_visualize = ugv_vision.apriltag_visualize:main',
             'apriltag_ctrl = ugv_vision.apriltag_ctrl:main',
             'apriltag_track_0 = ugv_vision.apriltag_track_0:main',
             'apriltag_track_1 = ugv_vision.apriltag_track_1:main',

@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/MapSave.srv"
   "action/Behavior.action"
   "msg/LineArray.msg"
+  "msg/Position.msg"
   "msg/Point.msg"
   "msg/AprilTag.msg"
   "msg/AprilTagArray.msg"

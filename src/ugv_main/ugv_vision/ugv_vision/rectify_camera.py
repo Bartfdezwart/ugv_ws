@@ -6,7 +6,7 @@ import yaml
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage, Image, CameraInfo
+from sensor_msgs.msg import CompressedImage, Image
 
 
 def resolve_ros_path(path_str: str) -> str:
@@ -114,23 +114,9 @@ class RectifyCamera(Node):
         raw_K = self.camera_matrix
 
         h, w = image.shape[:2]
-        new_K, _ = cv2.getOptimalNewCameraMatrix(raw_K, self.dist_coef, (w, h), alpha=0)
+        # new_K, _ = cv2.getOptimalNewCameraMatrix(raw_K, self.dist_coef, (w, h), alpha=0)
 
-        # Publish rectified CameraInfo
-        cam_info = CameraInfo()
-        cam_info.header = image_msg.header
-        cam_info.width = w
-        cam_info.height = h
-        cam_info.k = new_K.flatten().tolist()
-        cam_info.d = [0.0, 0.0, 0.0, 0.0, 0.0]
-        cam_info.r = np.eye(3).flatten().tolist()
-        P = np.hstack([new_K, np.zeros((3, 1))])
-        cam_info.p = P.flatten().tolist()
-
-        if not hasattr(self, "rect_caminfo_pub"):
-            self.rect_caminfo_pub = self.create_publisher(CameraInfo, "image_rect/camera_info", 10)
-        self.rect_caminfo_pub.publish(cam_info)
-
+ 
 
 
         # Publish a compressed version of the rectified image
