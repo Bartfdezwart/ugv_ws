@@ -62,6 +62,20 @@ class ApriltagCtrl(Node):
 
         self.K_received = True
 
+        # TODO: measure tag position on field, add all tags
+        self.tag_world_positions = {
+            4: np.array([-3.0, 0.0]),
+            5: np.array([3.0, 0.0]),
+
+            6: np.array([-3.2, 1.85]),
+            7: np.array([-3.66, 1.85]),
+
+            8: np.array([-3.0, 4.5]),
+            9: np.array([0.0, 4.5]),
+            10: np.array([3.0, 4.5]),
+        }
+
+
 
     def detect_apritag(self, frame):
 
@@ -118,6 +132,9 @@ class ApriltagCtrl(Node):
         if not self.visualize:
             return
 
+
+        visible_ids = []
+        distances = []
         # Loop through the detected apriltags
         for r in results:
             # Get the corners of the apriltag
@@ -131,25 +148,22 @@ class ApriltagCtrl(Node):
             # Draw a circle at the center of the apriltag
             cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
         
-            # width_in_img = np.linalg.norm(corners[0] - corners[1]) + np.linalg.norm(corners[0] - corners[1]) / 2
-            # detect_distance = (self.tag_width * self.tw) / width_in_img
-
-            success, rvec, tvec = cv2.solvePnP(self.tag_points_3d, corners, self.K, None, flags=cv2.SOLVEPNP_IPPE_SQUARE) 
+            _, _, tvec = cv2.solvePnP(self.tag_points_3d, corners, self.K, None, flags=cv2.SOLVEPNP_IPPE_SQUARE) 
             
-            # make sure distance is positive
-            # if distance < 0:
-            #     distance = -distance
-
             distance = float(tvec[2][0])
             text = f"{distance:.2f} m"
             text_x = center_x - 40
             text_y = center_y - 25
             cv2.putText(frame,text,(text_x, text_y),cv2.FONT_HERSHEY_SIMPLEX,0.7,(0, 255, 0),2,cv2.LINE_AA)
 
+            visible_ids.append(r["id"])
+            distances.append(distance)
 
-            # Print the ID and center of the apriltag
-            print(f'Tag ID: {r["id"]}, Center: ({center_x}, {center_y})')
-            print()
+        # only works if there are 2+ tags visible in frame.
+        rover_xy = self.svd_position(visible_ids, distances)
+        if rover_xy is not None:
+            print(f"Rover position: x={rover_xy[0]:.2f}, y={rover_xy[1]:.2f}")
+
 
         # Convert the OpenCV image back to a ROS Image message
         frame = cv2.resize(frame, (frame.shape[1] // self.scale, frame.shape[0] // self.scale))
@@ -159,8 +173,67 @@ class ApriltagCtrl(Node):
         self.apriltag_ctrl_publisher.publish(result_img_msg)
         # Show the result image
         cv2.imshow('ctrled Image', frame)
-        # # Wait for 1 millisecond
+        # Wait for 1 millisecond
         cv2.waitKey(1)
+
+
+    def svd_position(self, tag_ids, distances):
+        print("in svd position")
+        print("Tag amount: " + str(len(tag_ids)))
+        # collect world coordinates & distances
+        Ps, Ds = [], []
+        for tid, d in zip(tag_ids, distances):
+            if tid in self.tag_world_positions:
+                Ps.append(self.tag_world_positions[tid])
+                Ds.append(d)
+
+        Ps = np.array(Ps, float)
+        Ds = np.array(Ds, float)
+        n = len(Ps)
+
+        # not enough tags
+        if n < 2:
+            return None
+
+        # 2 tags
+        if n == 2:
+            print("2 tags")
+            P1, P2 = Ps
+            d1, d2 = Ds
+            D = np.linalg.norm(P2 - P1)
+            if D > d1 + d2 or D < abs(d1 - d2):
+                print("D > d1 + d2 or D < abs(d1 - d2)")
+                return None
+
+            a = (np.power(d1, 2) - np.power(d2, 2) + np.power(D, 2)) / (2*D)
+            h2 = np.power(d1, 2) - np.power(a, 2)
+            if h2 < 0:
+                print("h2 < 0")
+                return None
+
+            # midpoint and perpendicular offset
+            P3 = P1 + a * (P2 - P1) / D
+            perp = np.array([-(P2[1]-P1[1])/D, (P2[0]-P1[0])/D]) * np.sqrt(h2)
+
+            sol1, sol2 = P3 + perp, P3 - perp
+
+            # choose the position inside the field 
+            # TODO: where is the center?
+            inside = lambda p: -4.5 <= p[0] <= 4.5 and -3 <= p[1] <= 3
+            print("return solution")
+            return sol1 if inside(sol1) else sol2
+
+        # 3+ tags
+        print("3+ tags")
+        A = np.column_stack((2*Ps[:, 0], 2*Ps[:, 1], -np.ones(n)))
+        b = (np.power(Ps[:,0], 2) + np.power(Ps[:,1], 2) - np.power(Ds,2)).reshape(-1, 1)
+
+        # Solve A x = b via SVD (pseudoinverse)
+        U, S, Vt = np.linalg.svd(A, full_matrices=False)
+        x = Vt.T @ (np.linalg.inv(np.diag(S)) @ (U.T @ b))
+        print(x)
+        return x[:2, 0]
+
 
 
 def main(args=None):
