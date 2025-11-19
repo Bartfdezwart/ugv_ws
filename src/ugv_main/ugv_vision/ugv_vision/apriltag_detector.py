@@ -62,6 +62,7 @@ class ApriltagCtrl(Node):
 
         # Publish the found april tags
         if results:
+            print(results[0])
             self.apriltags_publisher.publish(
                 AprilTagArray(
                     header=msg.header,

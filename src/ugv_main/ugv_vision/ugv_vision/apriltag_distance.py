@@ -9,6 +9,56 @@ from sensor_msgs.msg import CameraInfo
 from ugv_interface.msg import AprilTag, AprilTagArray, Position
 
 
+
+class Circle(object):
+    """ An OOP implementation of a circle as an object """
+
+    def __init__(self, xposition, yposition, radius):
+        self.xpos = xposition
+        self.ypos = yposition
+        self.radius = radius
+
+    def circle_intersect(self, circle2):
+        """
+        Intersection points of two circles using the construction of triangles
+        as proposed by Paul Bourke, 1997.
+        http://paulbourke.net/geometry/circlesphere/
+        """
+        X1, Y1 = self.xpos, self.ypos
+        X2, Y2 = circle2.xpos, circle2.ypos
+        R1, R2 = self.radius, circle2.radius
+
+        Dx = X2-X1
+        Dy = Y2-Y1
+        D = np.sqrt(Dx**2 + Dy**2)
+        # Distance between circle centres
+        if D > R1 + R2:
+            return "The circles do not intersect"
+        elif D < np.fabs(R2 - R1):
+            return "No Intersect - One circle is contained within the other"
+        elif D == 0 and R1 == R2:
+            return "No Intersect - The circles are equal and coincident"
+        else:
+            if D == R1 + R2 or D == R1 - R2:
+                CASE = "The circles intersect at a single point"
+            else:
+                CASE = "The circles intersect at two points"
+            chorddistance = (R1**2 - R2**2 + D**2)/(2*D)
+            # distance from 1st circle's centre to the chord between intersects
+            halfchordlength = np.sqrt(R1**2 - chorddistance**2)
+            chordmidpointx = X1 + (chorddistance*Dx)/D
+            chordmidpointy = Y1 + (chorddistance*Dy)/D
+            I1 = (chordmidpointx + (halfchordlength*Dy)/D,
+                  chordmidpointy - (halfchordlength*Dx)/D)
+            theta1 = np.degrees(np.arctan2(I1[1]-Y1, I1[0]-X1))
+            I2 = (chordmidpointx - (halfchordlength*Dy)/D,
+                  chordmidpointy + (halfchordlength*Dx)/D)
+            theta2 = np.degrees(np.arctan2(I2[1]-Y1, I2[0]-X1))
+            if theta2 > theta1:
+                I1, I2 = I2, I1
+            return (I1, I2, CASE)
+
+
 class ApriltagDistance(Node):
     def __init__(self, visualize: bool = False):
         super().__init__('apriltag_distance')
@@ -30,6 +80,14 @@ class ApriltagDistance(Node):
             [ self.tw/2, -self.tw/2, 0],
             [-self.tw/2, -self.tw/2, 0]
         ], dtype=np.float32)
+        
+        # # AprilTag 3D corner layout
+        # self.tag_points_3d = np.array([
+        #     [-self.tw/2,  -self.tw/2, 0],
+        #     [ self.tw/2,  -self.tw/2, 0],
+        #     [ self.tw/2, self.tw/2, 0],
+        #     [-self.tw/2, self.tw/2, 0]
+        # ], dtype=np.float32)
 
         self.scale = 2
         self.K = []
@@ -102,6 +160,7 @@ class ApriltagDistance(Node):
             distances.append(distance)
 
         rover_xy = self.svd_position(visible_ids, distances)
+        print("Rover XY position:", rover_xy)
 
         if rover_xy is not None:
             pos = Position()
@@ -148,9 +207,19 @@ class ApriltagDistance(Node):
             inside = lambda p: -3.0 <= p[0] <= 3.0 and -4.5 <= p[1] <= 4.5
 
             return sol1 if inside(sol1) else sol2
+        
+            # # Using Circle intersection method by Paul Bourke
+            # C1 = Circle(P1[0], P1[1], d1)
+            # C2 = Circle(P2[0], P2[1], d2)
+            
+            # sol1, sol2, _ = C1.circle_intersect(C2)
+            
+            # inside = lambda p: -3.0 <= p[0] <= 3.0 and -4.5 <= p[1] <= 4.5
 
-        # 3+ tags
-        A = np.column_stack((2*Ps[:, 0], 2*Ps[:, 1], -np.ones(n)))
+            # return sol1 if inside(sol1) else sol2
+
+        # 3+ tags    
+        A = np.column_stack((2*Ps[:, 0], 2*Ps[:, 1], np.ones(n)))
         b = (Ps[:,0]**2 + Ps[:,1]**2 - Ds**2).reshape(-1, 1)
 
         U, S, Vt = np.linalg.svd(A, full_matrices=False)
