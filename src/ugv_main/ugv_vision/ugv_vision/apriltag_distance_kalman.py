@@ -104,15 +104,27 @@ class ApriltagDistance(Node):
             visible_ids.append(det.id)
             distances.append(distance)
 
+
         rover_xy = self.svd_position(visible_ids, distances)
 
+        self.tags_distance_pub.publish(out_msg)
+
+        self.kalman_predict()
+
         if rover_xy is not None:
-            rover_xy = self.kalman_filter(rover_xy)
+            # update position
+            rover_xy = self.kalman_update(rover_xy)
             pos = Position()
             pos.x = float(rover_xy[0])
             pos.y = float(rover_xy[1])
             self.position_pub.publish(pos)
-            self.tags_distance_pub.publish(out_msg)
+        else:
+            # predicted position
+            pos = Position()
+            pos.x = float(self.x_kf[0])
+            pos.y = float(self.x_kf[1])
+            self.position_pub.publish(pos)
+
 
 
     def svd_position(self, tag_ids, distances):
@@ -162,40 +174,40 @@ class ApriltagDistance(Node):
         return x[:2, 0]
 
 
-    def kalman_filter(self, z):
-            now = self.get_clock().now().nanoseconds / 1e9
-            if self.last_t is None:
-                self.last_t = now
-            dt = max(now - self.last_t, 1e-3)
+    def kalman_predict(self):
+        now = self.get_clock().now().nanoseconds / 1e9
+        if self.last_t is None:
             self.last_t = now
+        dt = max(now - self.last_t, 1e-3)
+        self.last_t = now
 
-            # linear motion
-            A = np.eye(4)
-            A[0,2] = dt
-            A[1,3] = dt
+        A = np.array([
+            [1.0, 0.0, dt,  0.0],
+            [0.0, 1.0, 0.0, dt ],
+            [1.0, 0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0, 1.0]
+        ])
 
-            # update based on position without velocity.
-            H = np.array([[1, 0, 0, 0],
-                          [0, 1, 0, 0]], float)
+        Q = np.eye(4) * 0.001
 
-            # noise
-            Q = np.eye(4) * 0.001
-            R = self.R_kf
+        self.x_kf = A @ self.x_kf
+        self.P_kf = A @ self.P_kf @ A.T + Q
 
-            # prediction
-            self.x_kf = A @ self.x_kf
-            self.P_kf = A @ self.P_kf @ A.T + Q
 
-            # update
-            z = np.array(z, float).reshape(2,1)
-            y = z - H @ self.x_kf
-            S = H @ self.P_kf @ H.T + R
-            K = self.P_kf @ H.T @ np.linalg.inv(S)
+    def kalman_update(self, z):
+        H = np.array([[1, 0, 0, 0],
+                    [0, 1, 0, 0]], float)
+        R = self.R_kf
 
-            self.x_kf = self.x_kf + K @ y
-            self.P_kf = (np.eye(4) - K @ H) @ self.P_kf
+        z = np.array(z).reshape(2,1)
+        y = z - H @ self.x_kf
+        S = H @ self.P_kf @ H.T + R
+        K = self.P_kf @ H.T @ np.linalg.inv(S)
 
-            return self.x_kf[:2,0]
+        self.x_kf += K @ y
+        self.P_kf = (np.eye(4) - K @ H) @ self.P_kf
+
+        return self.x_kf[:2,0]
 
 
 def main(args=None):
