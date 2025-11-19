@@ -6,6 +6,7 @@ rover_venv/
 
 bags/
 rerun_logs/
+snapshots/
 
 .vscode
 
