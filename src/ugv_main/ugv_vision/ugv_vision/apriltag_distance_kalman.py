@@ -18,12 +18,10 @@ class ApriltagDistance(Node):
         self.tags_distance_pub = self.create_publisher(AprilTagArray, '/apriltags_distance', 10)
         self.position_pub = self.create_publisher(Position, '/rover_position', 10)
 
-        # Camera intrinsics
         self.tw = 0.160
         self.K_received = False
         self.camera_info_sub = self.create_subscription(CameraInfo, "/camera_info", self.camera_info_callback, 10)
 
-        # AprilTag 3D corner layout
         self.tag_points_3d = np.array([
             [-self.tw/2,  self.tw/2, 0],
             [ self.tw/2,  self.tw/2, 0],
@@ -34,7 +32,12 @@ class ApriltagDistance(Node):
         self.scale = 2
         self.K = []
 
-        # Tag world coordinates
+        self.x_kf = np.zeros((4, 1), float)
+        self.P_kf = np.eye(4, dtype=float)
+        self.R_kf = 0.05 * np.eye(2, dtype=float)
+        self.Q_kf_base = 0.01 * np.eye(4, dtype=float)
+        self.last_t = None
+
         self.tag_world_positions = {
             4: np.array([-3.0, 0.0]),
             5: np.array([3.0, 0.0]),
@@ -50,7 +53,7 @@ class ApriltagDistance(Node):
     def camera_info_callback(self, msg: CameraInfo):
         if self.K_received:
             return
-        print("CAMERA CALLBACK")
+
         K = np.array(msg.k, dtype=float).reshape(3, 3)
 
         K_scaled = K.copy()
@@ -104,6 +107,7 @@ class ApriltagDistance(Node):
         rover_xy = self.svd_position(visible_ids, distances)
 
         if rover_xy is not None:
+            rover_xy = self.kalman_filter(rover_xy)
             pos = Position()
             pos.x = float(rover_xy[0])
             pos.y = float(rover_xy[1])
@@ -112,51 +116,86 @@ class ApriltagDistance(Node):
 
 
     def svd_position(self, tag_ids, distances):
-
-        Ps, Ds = [], []
+        tags_pos, tags_dist = [], []
         for tid, d in zip(tag_ids, distances):
             if tid in self.tag_world_positions:
-                Ps.append(self.tag_world_positions[tid])
-                Ds.append(d)
+                tags_pos.append(self.tag_world_positions[tid])
+                tags_dist.append(d)
 
-        Ps = np.array(Ps, float)
-        Ds = np.array(Ds, float)
-        n = len(Ps)
+        tags_pos = np.array(tags_pos, float)
+        tags_dist = np.array(tags_dist, float)
+        n = len(tags_pos)
 
-        # Not enough valid tags
+        # not enough tags
         if n < 2:
             return None
 
-        # 2 tags
+        # circle intersection with 2 tags
         if n == 2:
-            P1, P2 = Ps
-            d1, d2 = Ds
-            D = np.linalg.norm(P2 - P1)
+            pos1, pos2 = tags_pos
+            d1, d2 = tags_dist
+            D = np.linalg.norm(pos2 - pos1)
 
             if D > d1 + d2 or D < abs(d1 - d2):
                 return None
 
-            a = (d1**2 - d2**2 + D**2) / (2*D)
-            h2 = d1**2 - a**2
-            if h2 < 0:
+            mid_dist = (np.power(d1, 2) - np.power(d2, 2) + np.power(D, 2)) / (2*D)
+            discriminant = np.power(d1, 2) - np.power(mid_dist, 2)
+            if discriminant < 0:
                 return None
 
-            P3 = P1 + a * (P2 - P1) / D
-            perp = np.array([-(P2[1]-P1[1])/D, (P2[0]-P1[0])/D]) * np.sqrt(h2)
+            P3 = pos1 + mid_dist * (pos2 - pos1) / D
+            perp = np.array([-(pos2[1]-pos1[1])/D, (pos2[0]-pos1[0])/D]) * np.sqrt(discriminant)
 
             sol1, sol2 = P3 + perp, P3 - perp
             inside = lambda p: -3.0 <= p[0] <= 3.0 and -4.5 <= p[1] <= 4.5
 
             return sol1 if inside(sol1) else sol2
 
-        # 3+ tags
-        A = np.column_stack((2*Ps[:, 0], 2*Ps[:, 1], -np.ones(n)))
-        b = (Ps[:,0]**2 + Ps[:,1]**2 - Ds**2).reshape(-1, 1)
+        # SVD with 3+ tags
+        A = np.column_stack((2*tags_pos[:, 0], 2*tags_pos[:, 1], -np.ones(n)))
+        b = (np.power(tags_pos[:,0], 2) + np.power(tags_pos[:,1], 2) - np.power(tags_dist, 2)).reshape(-1, 1)
 
         U, S, Vt = np.linalg.svd(A, full_matrices=False)
         x = Vt.T @ (np.linalg.inv(np.diag(S)) @ (U.T @ b))
 
         return x[:2, 0]
+
+
+    def kalman_filter(self, z):
+            now = self.get_clock().now().nanoseconds / 1e9
+            if self.last_t is None:
+                self.last_t = now
+            dt = max(now - self.last_t, 1e-3)
+            self.last_t = now
+
+            # linear motion
+            A = np.eye(4)
+            A[0,2] = dt
+            A[1,3] = dt
+
+            # update based on position without velocity.
+            H = np.array([[1, 0, 0, 0],
+                          [0, 1, 0, 0]], float)
+
+            # noise
+            Q = np.eye(4) * 0.001
+            R = self.R_kf
+
+            # prediction
+            self.x_kf = A @ self.x_kf
+            self.P_kf = A @ self.P_kf @ A.T + Q
+
+            # update
+            z = np.array(z, float).reshape(2,1)
+            y = z - H @ self.x_kf
+            S = H @ self.P_kf @ H.T + R
+            K = self.P_kf @ H.T @ np.linalg.inv(S)
+
+            self.x_kf = self.x_kf + K @ y
+            self.P_kf = (np.eye(4) - K @ H) @ self.P_kf
+
+            return self.x_kf[:2,0]
 
 
 def main(args=None):
