@@ -8,7 +8,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo
 from ugv_interface.msg import AprilTag, AprilTagArray, Position
 from geometry_msgs.msg import PoseStamped, Point, Pose, Quaternion
-
+import math
 
 class ApriltagDistance(Node):
     def __init__(self, visualize: bool = False):
@@ -53,19 +53,6 @@ class ApriltagDistance(Node):
             9: np.array([0.0, 4.5]),
             10: np.array([2.84, 4.5]),
         }
-
-        # self.tag_world_rotations = {
-        #     1: 0.0,
-        #     2: 1.5 * np.pi,
-        #     3: 0.5 * np.pi,
-        #     4: 1.5 * np.pi,
-        #     5: 0.5 * np.pi,
-        #     6: 1.5 * np.pi,
-        #     7: 0.5 * np.pi,
-        #     8: np.pi,
-        #     9: np.pi,
-        #     10: np.pi,
-        # }
 
         self.tag_world_rotations = {
             1: 0.0,
@@ -124,6 +111,7 @@ class ApriltagDistance(Node):
 
         visible_ids = []
         distances = []
+        rvecs = {}
 
         out_msg = AprilTagArray()
         out_msg.header = msg.header
@@ -133,9 +121,13 @@ class ApriltagDistance(Node):
 
             corners = np.array([[p.x, p.y] for p in det.corners], dtype=np.float32)
 
-            _, _, tvec = cv2.solvePnP(self.tag_points_3d,corners, self.K, None, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+            _, rvec, tvec = cv2.solvePnP(self.tag_points_3d, corners, self.K, None,
+                                         flags=cv2.SOLVEPNP_IPPE_SQUARE)
 
             distance = float(np.linalg.norm(tvec))
+
+            # store rvec
+            rvecs[det.id] = rvec
 
             det_out = AprilTag()
             det_out.family = det.family
@@ -161,20 +153,24 @@ class ApriltagDistance(Node):
         self.kalman_predict()
 
         if rover_xy is not None:
-            # update position
             rover_xy = self.kalman_update(rover_xy)
             pos = Position()
             pos.x = float(rover_xy[0])
             pos.y = float(rover_xy[1])
-            q_x,q_y,q_z,q_w = self.rover_orientation(visible_ids, distances, rover_xy)
+            q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
         else:
-            # predicted position
             pos = Position()
             pos.x = float(self.x_kf[0])
             pos.y = float(self.x_kf[1])
-            q_x,q_y,q_z,q_w = self.rover_orientation(visible_ids, distances, (pos.x, pos.y))
-        
-        rover_position = PoseStamped(pose=Pose(position=Point(x=pos.x, y=pos.y), orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)), header=msg.header)
+            q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
+
+        rover_position = PoseStamped(
+            pose=Pose(
+                position=Point(x=pos.x, y=pos.y),
+                orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)
+            ),
+            header=msg.header
+        )
 
         self.position_pub.publish(rover_position)
 
@@ -190,11 +186,9 @@ class ApriltagDistance(Node):
         tags_dist = np.array(tags_dist, float)
         n = len(tags_pos)
 
-        # not enough tags
         if n < 2:
             return None
 
-        # circle intersection with 2 tags
         if n == 2:
             pos1, pos2 = tags_pos
             d1, d2 = tags_dist
@@ -216,7 +210,6 @@ class ApriltagDistance(Node):
 
             return sol1 if inside(sol1) else sol2
 
-        # SVD with 3+ tags
         A = np.column_stack((2*tags_pos[:, 0], 2*tags_pos[:, 1], -np.ones(n)))
         b = (np.power(tags_pos[:,0], 2) + np.power(tags_pos[:,1], 2) - np.power(tags_dist, 2)).reshape(-1, 1)
 
@@ -247,95 +240,50 @@ class ApriltagDistance(Node):
         return self.x_kf[:2, 0]
 
 
-    def rover_orientation(self, visible_ids, distances, rover_xy):
-        yaws_deg = []
-        weights = []
+    def rover_orientation(self, visible_ids, distances, rvecs):
+        yaw_list = []
+        weight_list = []
 
-        for visible_id, dist in zip(visible_ids, distances):
+        for tag_id, dist in zip(visible_ids, distances):
 
-            tag_pos = self.tag_world_positions[visible_id]
+            if tag_id not in rvecs:
+                continue
 
-            # tag world rotation is stored in degrees → convert to radians now
-            tag_yaw_rad = np.radians(self.tag_world_rotations[visible_id])
+            tag_yaw_world = self.tag_world_rotations[tag_id]
 
-            # angle from tag to rover (in radians)
-            v = rover_xy - tag_pos
-            angle_tag_to_rover = np.arctan2(v[1], v[0])  # radians
+            rvec = rvecs[tag_id]
 
-            # rover yaw in radians
-            rover_yaw = angle_tag_to_rover + tag_yaw_rad + np.pi
+            R_tag_to_cam, _ = cv2.Rodrigues(rvec)
+            R_cam_to_tag = R_tag_to_cam.T
 
-            # wrap radians to [-pi, pi]
-            rover_yaw = (rover_yaw + np.pi) % (2*np.pi) - np.pi
+            cam_yaw_tag_rad = math.atan2(R_cam_to_tag[1, 0], R_cam_to_tag[0, 0])
+            cam_yaw_tag_deg = math.degrees(cam_yaw_tag_rad) % 360.0
 
-            # convert to degrees
-            rover_yaw_deg = np.degrees(rover_yaw)
-
-            # wrap to [-180, 180]
-            rover_yaw_deg = (rover_yaw_deg + 180) % 360 - 180
+            rover_yaw_world = (tag_yaw_world - cam_yaw_tag_deg) % 360.0
 
             w = 1.0 / max(dist, 0.001)
-            yaws_deg.append(rover_yaw_deg)
-            weights.append(w)
+            yaw_list.append(rover_yaw_world)
+            weight_list.append(w)
 
-        # no tags
-        if not yaws_deg:
+        if not yaw_list:
             yaw_deg = 0.0
         else:
-            # weighted circular mean in degrees
-            yaws_rad = np.radians(yaws_deg)
-            weights = np.array(weights)
+            yaw_rad_list = [math.radians(y) for y in yaw_list]
+            weights = np.array(weight_list)
 
-            yaw_mean_rad = np.arctan2(
-                np.sum(np.sin(yaws_rad) * weights),
-                np.sum(np.cos(yaws_rad) * weights)
+            mean_rad = math.atan2(
+                np.sum(np.sin(yaw_rad_list) * weights),
+                np.sum(np.cos(yaw_rad_list) * weights)
             )
+            yaw_deg = math.degrees(mean_rad) + 180.0 % 360.0
+            # yaw_deg = math.degrees(mean_rad) % 360.0
+            # yaw_deg = (yaw_deg + 180.0) % 360.0
+            
+        yaw_rad = math.radians(yaw_deg)
+        cy = math.cos(yaw_rad * 0.5)
+        sy = math.sin(yaw_rad * 0.5)
 
-            # final angle in degrees [-180, 180]
-            yaw_deg = (np.degrees(yaw_mean_rad) + 180) % 360 - 180
-
-        # convert final yaw_deg to quaternion
-        yaw_rad = np.radians(yaw_deg)
-        cy = np.cos(yaw_rad * 0.5)
-        sy = np.sin(yaw_rad * 0.5)
-
-        return (0.0, 0.0, sy, cy)
-
-
-    # def kalman_predict(self):
-    #     now = self.get_clock().now().nanoseconds / 1e9
-    #     if self.last_t is None:
-    #         self.last_t = now
-    #     dt = max(now - self.last_t, 1e-3)
-    #     self.last_t = now
-
-    #     A = np.array([
-    #         [1.0, 0.0, dt,  0.0],
-    #         [0.0, 1.0, 0.0, dt ],
-    #         [1.0, 0.0, 1.0, 0.0],
-    #         [0.0, 1.0, 0.0, 1.0]
-    #     ])
-
-    #     Q = np.eye(4) * 0.001
-
-    #     self.x_kf = A @ self.x_kf
-    #     self.P_kf = A @ self.P_kf @ A.T + Q
-
-
-    # def kalman_update(self, z):
-    #     H = np.array([[1, 0, 0, 0],
-    #                 [0, 1, 0, 0]], float)
-    #     R = self.R_kf
-
-    #     z = np.array(z).reshape(2,1)
-    #     y = z - H @ self.x_kf
-    #     S = H @ self.P_kf @ H.T + R
-    #     K = self.P_kf @ H.T @ np.linalg.inv(S)
-
-    #     self.x_kf += K @ y
-    #     self.P_kf = (np.eye(4) - K @ H) @ self.P_kf
-
-    #     return self.x_kf[:2,0]
+        return 0.0, 0.0, sy, cy
 
 
 def main(args=None):
