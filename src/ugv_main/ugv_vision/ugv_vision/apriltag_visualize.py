@@ -10,7 +10,7 @@ from ugv_interface.msg import AprilTagArray
 from geometry_msgs.msg import PoseStamped
 
 import builtin_interfaces.msg
-
+from scipy.spatial.transform import Rotation
 
 class ApriltagVisualize(Node):
     def __init__(self):
@@ -99,7 +99,7 @@ class ApriltagVisualize(Node):
                 # Orientation text (yaw only)
                 q = self.latest_rover_zw
                 quat = [q.x, q.y, q.z, q.w]
-                _, _, yaw = self.euler_from_quaternion(quat)
+                _, _, yaw = Rotation.from_quat(quat).as_euler(seq='xyz')
 
                 yaw_deg = math.degrees(yaw)
                 ang_text = f"Angle: {yaw_deg:.1f}°"
