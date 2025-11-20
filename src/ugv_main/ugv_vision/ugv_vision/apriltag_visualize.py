@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from cv_bridge import CvBridge
 from rclpy.node import Node
+import math 
 
 from sensor_msgs.msg import CompressedImage
 from ugv_interface.msg import AprilTagArray
@@ -85,14 +86,54 @@ class ApriltagVisualize(Node):
                 pts = [(int(p.x), int(p.y)) for p in det.corners]
                 pts_np = np.array(pts, dtype=np.int32)
                 cv2.polylines(frame, [pts_np], True, (0, 255, 0), 2)
-        if self.latest_rover_pos is not None:
-            text = f"Rover: x={self.latest_rover_pos.x:.2f}  y={self.latest_rover_pos.y:.2f}"
-            W = frame.shape[1]
+            if self.latest_rover_pos is not None:
+                # Position text
+                pos_text = f"Rover: x={self.latest_rover_pos.x:.2f}  y={self.latest_rover_pos.y:.2f}"
+                W = frame.shape[1]
+                base_x = int(W/2 - 200)
+                base_y = 30
 
-            cv2.putText(frame, text, (int(W/2 - 200), 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+                cv2.putText(frame, pos_text, (base_x, base_y),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
+                # Orientation text (yaw only)
+                q = self.latest_rover_zw
+                quat = [q.x, q.y, q.z, q.w]
+                _, _, yaw = self.euler_from_quaternion(quat)
+
+                yaw_deg = math.degrees(yaw)
+                ang_text = f"Angle: {yaw_deg:.1f}°"
+
+                cv2.putText(frame, ang_text, (base_x, base_y + 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
         cv2.imshow("AprilTag Visualization", frame)
         cv2.waitKey(1)
+
+
+    def euler_from_quaternion(self, quat):
+        """
+        Convert quaternion (x, y, z, w) into Euler angles (roll, pitch, yaw)
+        using the same convention as tf_transformations (Z-Y-X / yaw-pitch-roll).
+        """
+        x, y, z, w = quat
+
+        # Roll (x-axis rotation)
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = math.atan2(t0, t1)
+
+        # Pitch (y-axis rotation)
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = math.asin(t2)
+
+        # Yaw (z-axis rotation)
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+
+        return roll_x, pitch_y, yaw_z
 
 
 def main(args=None):
