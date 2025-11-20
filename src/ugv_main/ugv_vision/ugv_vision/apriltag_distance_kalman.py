@@ -7,6 +7,7 @@ from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo
 from ugv_interface.msg import AprilTag, AprilTagArray, Position
+from geometry_msgs.msg import PoseStamped, Point, Pose, Quaternion
 
 
 class ApriltagDistance(Node):
@@ -16,7 +17,7 @@ class ApriltagDistance(Node):
 
         self.tag_sub = self.create_subscription(AprilTagArray, '/apriltags', self.tag_callback, 10)
         self.tags_distance_pub = self.create_publisher(AprilTagArray, '/apriltags_distance', 10)
-        self.position_pub = self.create_publisher(Position, '/rover_position', 10)
+        self.position_pub = self.create_publisher(PoseStamped, '/rover_pose', 10)
 
         self.tw = 0.160
         self.K_received = False
@@ -51,6 +52,19 @@ class ApriltagDistance(Node):
             8: np.array([-2.84, 4.5]),
             9: np.array([0.0, 4.5]),
             10: np.array([2.84, 4.5]),
+        }
+
+        self.tag_world_rotations = {
+            1: 0.0,
+            2: 1.5 * np.pi,
+            3: 0.5 * np.pi,
+            4: 1.5 * np.pi,
+            5: 0.5 * np.pi,
+            6: 1.5 * np.pi,
+            7: 0.5 * np.pi,
+            8: np.pi,
+            9: np.pi,
+            10: np.pi,
         }
 
         # KALMAN PARAMS
@@ -139,14 +153,17 @@ class ApriltagDistance(Node):
             pos = Position()
             pos.x = float(rover_xy[0])
             pos.y = float(rover_xy[1])
-            self.position_pub.publish(pos)
+            q_x,q_y,q_z,q_w = self.rover_orientation(visible_ids, distances, rover_xy)
         else:
             # predicted position
             pos = Position()
             pos.x = float(self.x_kf[0])
             pos.y = float(self.x_kf[1])
-            self.position_pub.publish(pos)
+            q_x,q_y,q_z,q_w = self.rover_orientation(visible_ids, distances, (pos.x, pos.y))
+        
+        rover_position = PoseStamped(pose=Pose(position=Point(x=pos.x, y=pos.y), orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)), header=msg.header)
 
+        self.position_pub.publish(rover_position)
 
 
     def svd_position(self, tag_ids, distances):
@@ -215,6 +232,37 @@ class ApriltagDistance(Node):
         self.P_kf = (I - K @ H) @ self.P_kf
 
         return self.x_kf[:2, 0]
+
+
+    def rover_orientation(self, visible_ids, distances, rover_xy):
+        yaws = []
+        weights = []
+
+        for visible_id, dist in zip(visible_ids, distances):
+
+            tag_pos = self.tag_world_positions[visible_id]
+            tag_yaw = self.tag_world_rotations[visible_id]
+
+            v = rover_xy - tag_pos
+            angle_tag_to_rover = np.arctan2(v[1], v[0])
+
+            rover_yaw = angle_tag_to_rover + tag_yaw + np.pi
+            rover_yaw = (rover_yaw + np.pi) % (2 * np.pi) - np.pi
+
+            w = 1.0 / max(dist, 0.001)
+            yaws.append(rover_yaw)
+            weights.append(w)
+
+        mean_rot = np.arctan2(
+            np.sum(np.sin(yaws) * weights),
+            np.sum(np.cos(yaws) * weights)
+        )
+
+        # convert to quaternion
+        cy = np.cos(mean_rot * 0.5)
+        sy = np.sin(mean_rot * 0.5)
+
+        return (0.0, 0.0, sy, cy)
 
 
     # def kalman_predict(self):
