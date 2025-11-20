@@ -54,17 +54,30 @@ class ApriltagDistance(Node):
             10: np.array([2.84, 4.5]),
         }
 
+        # self.tag_world_rotations = {
+        #     1: 0.0,
+        #     2: 1.5 * np.pi,
+        #     3: 0.5 * np.pi,
+        #     4: 1.5 * np.pi,
+        #     5: 0.5 * np.pi,
+        #     6: 1.5 * np.pi,
+        #     7: 0.5 * np.pi,
+        #     8: np.pi,
+        #     9: np.pi,
+        #     10: np.pi,
+        # }
+
         self.tag_world_rotations = {
             1: 0.0,
-            2: 1.5 * np.pi,
-            3: 0.5 * np.pi,
-            4: 1.5 * np.pi,
-            5: 0.5 * np.pi,
-            6: 1.5 * np.pi,
-            7: 0.5 * np.pi,
-            8: np.pi,
-            9: np.pi,
-            10: np.pi,
+            2: 270,
+            3: 90,
+            4: 270,
+            5: 90,
+            6: 270,
+            7: 90,
+            8: 180,
+            9: 180,
+            10: 180,
         }
 
         # KALMAN PARAMS
@@ -75,7 +88,7 @@ class ApriltagDistance(Node):
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ])
-        self.kf_B = np.zeros((4, 2))    # no control input
+        self.kf_B = np.zeros((4, 2))
         self.kf_H = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0]
@@ -235,32 +248,56 @@ class ApriltagDistance(Node):
 
 
     def rover_orientation(self, visible_ids, distances, rover_xy):
-        yaws = []
+        yaws_deg = []
         weights = []
 
         for visible_id, dist in zip(visible_ids, distances):
 
             tag_pos = self.tag_world_positions[visible_id]
-            tag_yaw = self.tag_world_rotations[visible_id]
 
+            # tag world rotation is stored in degrees → convert to radians now
+            tag_yaw_rad = np.radians(self.tag_world_rotations[visible_id])
+
+            # angle from tag to rover (in radians)
             v = rover_xy - tag_pos
-            angle_tag_to_rover = np.arctan2(v[1], v[0])
+            angle_tag_to_rover = np.arctan2(v[1], v[0])  # radians
 
-            rover_yaw = angle_tag_to_rover + tag_yaw + np.pi
-            rover_yaw = (rover_yaw + np.pi) % (2 * np.pi) - np.pi
+            # rover yaw in radians
+            rover_yaw = angle_tag_to_rover + tag_yaw_rad + np.pi
+
+            # wrap radians to [-pi, pi]
+            rover_yaw = (rover_yaw + np.pi) % (2*np.pi) - np.pi
+
+            # convert to degrees
+            rover_yaw_deg = np.degrees(rover_yaw)
+
+            # wrap to [-180, 180]
+            rover_yaw_deg = (rover_yaw_deg + 180) % 360 - 180
 
             w = 1.0 / max(dist, 0.001)
-            yaws.append(rover_yaw)
+            yaws_deg.append(rover_yaw_deg)
             weights.append(w)
 
-        mean_rot = np.arctan2(
-            np.sum(np.sin(yaws) * weights),
-            np.sum(np.cos(yaws) * weights)
-        )
+        # no tags
+        if not yaws_deg:
+            yaw_deg = 0.0
+        else:
+            # weighted circular mean in degrees
+            yaws_rad = np.radians(yaws_deg)
+            weights = np.array(weights)
 
-        # convert to quaternion
-        cy = np.cos(mean_rot * 0.5)
-        sy = np.sin(mean_rot * 0.5)
+            yaw_mean_rad = np.arctan2(
+                np.sum(np.sin(yaws_rad) * weights),
+                np.sum(np.cos(yaws_rad) * weights)
+            )
+
+            # final angle in degrees [-180, 180]
+            yaw_deg = (np.degrees(yaw_mean_rad) + 180) % 360 - 180
+
+        # convert final yaw_deg to quaternion
+        yaw_rad = np.radians(yaw_deg)
+        cy = np.cos(yaw_rad * 0.5)
+        sy = np.sin(yaw_rad * 0.5)
 
         return (0.0, 0.0, sy, cy)
 

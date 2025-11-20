@@ -42,7 +42,8 @@ class ApriltagCtrl(Node):
         # Convert the image to grayscale
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.resize(gray, (gray.shape[1] * self.scale, gray.shape[0] * self.scale))
-
+        gray = cv2.GaussianBlur(gray,(3,3),cv2.BORDER_DEFAULT)
+        
         # Sharpen image
         kernel = np.array([[0, -1, 0],
                            [-1, 5,-1],
