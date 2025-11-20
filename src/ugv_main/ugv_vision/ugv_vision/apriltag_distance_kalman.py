@@ -50,6 +50,25 @@ class ApriltagDistance(Node):
             10: np.array([2.84, 4.5]),
         }
 
+        # KALMAN PARAMS
+        self.kf_dt = 0.1
+        self.kf_F = np.array([
+            [1, 0, self.kf_dt, 0],
+            [0, 1, 0, self.kf_dt],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+        self.kf_B = np.zeros((4, 2))    # no control input
+        self.kf_H = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0]
+        ])
+        self.kf_Q = np.eye(4) * 0.001
+        self.kf_R = np.eye(2) * 0.05
+        self.kf_x0 = np.zeros((4, 1))
+        self.kf_P0 = np.eye(4)
+
+
     def camera_info_callback(self, msg: CameraInfo):
         if self.K_received:
             return
@@ -175,39 +194,60 @@ class ApriltagDistance(Node):
 
 
     def kalman_predict(self):
-        now = self.get_clock().now().nanoseconds / 1e9
-        if self.last_t is None:
-            self.last_t = now
-        dt = max(now - self.last_t, 1e-3)
-        self.last_t = now
+        self.x_kf = self.kf_F @ self.x_kf
+        self.P_kf = self.kf_F @ self.P_kf @ self.kf_F.T + self.kf_Q
 
-        A = np.array([
-            [1.0, 0.0, dt,  0.0],
-            [0.0, 1.0, 0.0, dt ],
-            [1.0, 0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0, 1.0]
-        ])
-
-        Q = np.eye(4) * 0.001
-
-        self.x_kf = A @ self.x_kf
-        self.P_kf = A @ self.P_kf @ A.T + Q
+        return self.x_kf
 
 
     def kalman_update(self, z):
-        H = np.array([[1, 0, 0, 0],
-                    [0, 1, 0, 0]], float)
-        R = self.R_kf
-
-        z = np.array(z).reshape(2,1)
+        H = self.kf_H
+        R = self.kf_R
+        z = np.array(z).reshape(2, 1)
         y = z - H @ self.x_kf
         S = H @ self.P_kf @ H.T + R
         K = self.P_kf @ H.T @ np.linalg.inv(S)
+        self.x_kf = self.x_kf + K @ y
+        I = np.eye(self.P_kf.shape[0])
+        self.P_kf = (I - K @ H) @ self.P_kf
 
-        self.x_kf += K @ y
-        self.P_kf = (np.eye(4) - K @ H) @ self.P_kf
+        return self.x_kf[:2, 0]
 
-        return self.x_kf[:2,0]
+
+    # def kalman_predict(self):
+    #     now = self.get_clock().now().nanoseconds / 1e9
+    #     if self.last_t is None:
+    #         self.last_t = now
+    #     dt = max(now - self.last_t, 1e-3)
+    #     self.last_t = now
+
+    #     A = np.array([
+    #         [1.0, 0.0, dt,  0.0],
+    #         [0.0, 1.0, 0.0, dt ],
+    #         [1.0, 0.0, 1.0, 0.0],
+    #         [0.0, 1.0, 0.0, 1.0]
+    #     ])
+
+    #     Q = np.eye(4) * 0.001
+
+    #     self.x_kf = A @ self.x_kf
+    #     self.P_kf = A @ self.P_kf @ A.T + Q
+
+
+    # def kalman_update(self, z):
+    #     H = np.array([[1, 0, 0, 0],
+    #                 [0, 1, 0, 0]], float)
+    #     R = self.R_kf
+
+    #     z = np.array(z).reshape(2,1)
+    #     y = z - H @ self.x_kf
+    #     S = H @ self.P_kf @ H.T + R
+    #     K = self.P_kf @ H.T @ np.linalg.inv(S)
+
+    #     self.x_kf += K @ y
+    #     self.P_kf = (np.eye(4) - K @ H) @ self.P_kf
+
+    #     return self.x_kf[:2,0]
 
 
 def main(args=None):
