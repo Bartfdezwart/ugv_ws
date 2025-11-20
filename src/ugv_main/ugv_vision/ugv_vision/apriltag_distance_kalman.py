@@ -39,6 +39,9 @@ class ApriltagDistance(Node):
         self.last_t = None
 
         self.tag_world_positions = {
+            1: np.array([0.0, -4.5]),
+            2: np.array([-3.0, -2.85]),
+            3: np.array([3.0, -2.85]),
             4: np.array([-3.0, 0.0]),
             5: np.array([3.0, 0.0]),
 
