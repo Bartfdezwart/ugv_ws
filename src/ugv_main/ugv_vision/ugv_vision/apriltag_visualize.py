@@ -5,7 +5,8 @@ from cv_bridge import CvBridge
 from rclpy.node import Node
 
 from sensor_msgs.msg import CompressedImage
-from ugv_interface.msg import AprilTagArray, Position
+from ugv_interface.msg import AprilTagArray
+from geometry_msgs.msg import PoseStamped
 
 import builtin_interfaces.msg
 
@@ -24,7 +25,7 @@ class ApriltagVisualize(Node):
 
         self.image_sub = self.create_subscription(CompressedImage, "/image_rect/preprocessed", self.image_callback, 10)
         self.tag_sub = self.create_subscription(AprilTagArray, "/apriltags_distance", self.tag_callback, 10)
-        self.pos_sub = self.create_subscription(Position, "/rover_position", self.position_callback, 10)
+        self.pos_sub = self.create_subscription(PoseStamped, "/rover_pose", self.position_callback, 10)
         self.get_logger().info("Apriltag visualizer with sync started.")
 
     def image_callback(self, msg):
@@ -44,7 +45,9 @@ class ApriltagVisualize(Node):
 
 
     def position_callback(self, msg):
-        self.latest_rover_pos = msg
+        self.latest_rover_pos = msg.pose.position
+        self.latest_rover_zw = msg.pose.orientation
+
         self.draw_and_show()
 
 
