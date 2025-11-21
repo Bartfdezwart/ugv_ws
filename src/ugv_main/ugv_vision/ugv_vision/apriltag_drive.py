@@ -30,7 +30,7 @@ class ApriltagDrive(Node):
 
         self.get_logger().info("Waiting for input")
 
-    def input_thread(self):
+    def input_thread(self): 
         while True:
             try:
                 text = input("Enter coordinate: ")
