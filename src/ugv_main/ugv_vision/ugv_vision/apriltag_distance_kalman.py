@@ -2,11 +2,13 @@ import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import CameraInfo, JointState
 from ugv_interface.msg import AprilTag, AprilTagArray, Position
 import math
 from scipy.optimize import minimize
 from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+
+from time import sleep
 
 
 class ApriltagDistance(Node):
@@ -17,6 +19,10 @@ class ApriltagDistance(Node):
         self.tag_sub = self.create_subscription(AprilTagArray, '/apriltags', self.tag_callback, 10)
         self.tags_distance_pub = self.create_publisher(AprilTagArray, '/apriltags_distance', 10)
         self.position_pub = self.create_publisher(PoseStamped, '/rover_pose', 10)
+
+        # Subscribe to joint states (ugv/joint_states topic)
+        self.joint_states_pub = self.create_publisher(JointState, '/ugv/joint_states', 10)
+
 
         self.kalmancall = self.create_timer(0.1, self.kalman_timer)
 
@@ -148,6 +154,13 @@ class ApriltagDistance(Node):
 
 
         rover_xy = self.svd_position(visible_ids, distances)
+        
+        print(rover_xy)
+        print(visible_ids)
+        rotation = 0.0
+        if rover_xy is None:
+            self.rotate_camera(self.x_kf[0], self.x_kf[1], rotation)
+            return
 
         self.tags_distance_pub.publish(out_msg)
         
@@ -240,6 +253,37 @@ class ApriltagDistance(Node):
             self.get_logger().warning(f"Refined position in max iterators: {minimization_result.nit}")
         refined_position = minimization_result.x
         return refined_position
+    
+    def rotate_camera(self, x, y, rotation):
+        try:
+            rover_pos = np.array([x, y])
+            distances = []
+            
+            for tag_id, tag_pos in self.tag_world_positions.items():
+                dist = np.linalg.norm(rover_pos - tag_pos)
+                distances.append((dist, tag_id))
+            
+            closest_points = sorted(distances, key=lambda item: item[0])[:2]
+            target_tags = [tag_id for _, tag_id in closest_points]
+            
+            print("Best target tags: ", target_tags)
+            
+            target = (self.tag_world_positions[target_tags[0]] + self.tag_world_positions[target_tags[1]]) / 2.0
+            
+            # Calculate angle to target
+            delta_x = target[0] - x
+            delta_y = target[1] - y
+            angle_to_target = rotation - math.atan2(delta_y, delta_x)
+            print(f"Rotating camera to angle (rad): {angle_to_target}")
+                    
+            js_msg = JointState()
+            js_msg.name = ['pt_base_link_to_pt_link1', 'pt_link1_to_pt_link2']
+            js_msg.position = [angle_to_target, 0.0]  # Rotate from -60 to +60 degrees
+            self.joint_states_pub.publish(js_msg)
+            sleep(0.2)  # Allow time for the camera to rotate
+        except Exception as e:
+            print(f"Error in rotate_camera: {e}")
+            pass
 
 
     def kalman_timer(self):
