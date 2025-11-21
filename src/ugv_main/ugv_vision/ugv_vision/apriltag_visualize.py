@@ -114,6 +114,7 @@ class ApriltagVisualize(Node):
 
                 cv2.putText(frame, ang_text, (base_x, base_y + 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+
         cv2.imshow("AprilTag Visualization", frame)
         cv2.waitKey(1)
 
