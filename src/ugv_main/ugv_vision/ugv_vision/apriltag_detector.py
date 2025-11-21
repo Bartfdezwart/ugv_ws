@@ -9,6 +9,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage, Image, CameraInfo
 from ugv_interface.msg import AprilTag, AprilTagArray, Point
 
+IMAGE_STREAM_SIZE = (640, 480)
+
 
 class ApriltagCtrl(Node):
     def __init__(self, visualize: bool = False):
@@ -43,7 +45,7 @@ class ApriltagCtrl(Node):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.resize(gray, (gray.shape[1] * self.scale, gray.shape[0] * self.scale))
         gray = cv2.GaussianBlur(gray,(3,3),cv2.BORDER_DEFAULT)
-        
+
         # Sharpen image
         kernel = np.array([[0, -1, 0],
                            [-1, 5,-1],
@@ -52,6 +54,7 @@ class ApriltagCtrl(Node):
 
         # Publish the preprocessed image
         preprocessed_image = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+        preprocessed_image = cv2.resize(preprocessed_image, IMAGE_STREAM_SIZE)
         preprocessed_msg = self.bridge.cv2_to_compressed_imgmsg(preprocessed_image)
         preprocessed_msg.header = msg.header
         self.image_preprocessed_publisher.publish(preprocessed_msg)

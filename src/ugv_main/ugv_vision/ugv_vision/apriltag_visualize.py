@@ -12,6 +12,10 @@ from geometry_msgs.msg import PoseStamped
 import builtin_interfaces.msg
 from scipy.spatial.transform import Rotation
 
+IMAGE_DETECTION_SIZE = np.array([1280, 960]) * 2
+IMAGE_STREAM_SIZE = np.array([640, 480])
+IMAGE_DETECTION_TO_STREAM_SCALE = IMAGE_DETECTION_SIZE / IMAGE_STREAM_SIZE
+
 class ApriltagVisualize(Node):
     def __init__(self):
         super().__init__("apriltag_visualize")
@@ -73,8 +77,8 @@ class ApriltagVisualize(Node):
         if tags_valid:
             for det in self.latest_tags:
 
-                cx = int(det.centre.x)
-                cy = int(det.centre.y)
+                cx = int(det.centre.x * IMAGE_DETECTION_TO_STREAM_SCALE[0])
+                cy = int(det.centre.y * IMAGE_DETECTION_TO_STREAM_SCALE[1])
 
                 # center
                 cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
@@ -83,7 +87,7 @@ class ApriltagVisualize(Node):
                 # distance
                 cv2.putText(frame, f"{det.distance:.2f} m", (cx - 40, cy - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 # outline
-                pts = [(int(p.x), int(p.y)) for p in det.corners]
+                pts = [(int(p.x * IMAGE_DETECTION_TO_STREAM_SCALE[0]), int(p.y * IMAGE_DETECTION_TO_STREAM_SCALE[1])) for p in det.corners]
                 pts_np = np.array(pts, dtype=np.int32)
                 cv2.polylines(frame, [pts_np], True, (0, 255, 0), 2)
             if self.latest_rover_pos is not None:
