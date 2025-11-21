@@ -50,7 +50,7 @@ class RectifyCamera(Node):
         super().__init__("rectify_camera")
 
         # Load the camera parameters from file
-        self.declare_parameter("camera_parameter_file", "package://ugv_vision/config/better_camera_params.yaml")
+        self.declare_parameter("camera_parameter_file", "package://ugv_vision/config/better_camera_params_2x.yaml")
         camera_parameter_file = self.get_parameter("camera_parameter_file").get_parameter_value().string_value
         if camera_parameter_file == "":
             raise RuntimeError("Required parameter 'camera_parameter_file' not set!")
