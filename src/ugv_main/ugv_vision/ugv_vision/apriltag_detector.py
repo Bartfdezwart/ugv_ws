@@ -48,7 +48,7 @@ class ApriltagCtrl(Node):
         kernel = np.array([[0, -1, 0],
                            [-1, 5,-1],
                            [0, -1, 0]])
-        gray = cv2.filter2D(gray, -1, kernel)
+        gray = cv2.filter2D(gray, -1, kernel) 
 
         # Publish the preprocessed image
         preprocessed_image = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
