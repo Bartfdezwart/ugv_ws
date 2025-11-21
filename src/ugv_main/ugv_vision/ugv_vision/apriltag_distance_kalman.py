@@ -1,14 +1,13 @@
-import argparse
-
 import cv2
 import numpy as np
 import rclpy
-from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo
 from ugv_interface.msg import AprilTag, AprilTagArray, Position
-from geometry_msgs.msg import PoseStamped, Point, Pose, Quaternion
 import math
+from scipy.optimize import minimize
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+
 
 class ApriltagDistance(Node):
     def __init__(self, visualize: bool = False):
@@ -206,7 +205,41 @@ class ApriltagDistance(Node):
         U, S, Vt = np.linalg.svd(A, full_matrices=False)
         x = Vt.T @ (np.linalg.inv(np.diag(S)) @ (U.T @ b))
 
-        return x[:2, 0]
+        position = x[:2, 0]
+
+        refined_position = self.refine_position(position, tags_pos, tags_dist)
+
+        return refined_position
+
+    def refine_position(
+        self,
+        initial_position,
+        beacon_positions,
+        distances,
+        tolerance = 1e-6,
+        max_iter = 20,
+    ):
+        def iterative_trilateration(position):
+            distance_errors = np.abs((distances - np.linalg.norm(beacon_positions[:, :2] - position, axis=1)) / distances)
+            return np.mean(distance_errors)
+
+        minimization_result = minimize(
+            iterative_trilateration,
+            initial_position.flatten(),
+            method="L-BFGS-B",
+            tol=tolerance,
+            bounds=(
+                (-3,3),
+                (-4.5, 4.5)
+            ),
+            options={
+                "maxiter": max_iter
+            }
+        )
+        if not minimization_result.success:
+            self.get_logger().warning(f"Refined position in max iterators: {minimization_result.nit}")
+        refined_position = minimization_result.x
+        return refined_position
 
 
     def kalman_timer(self):
@@ -270,7 +303,9 @@ class ApriltagDistance(Node):
                 np.sum(np.cos(yaw_rad_list) * weights)
             )
             yaw_deg = math.degrees(mean_rad) + 180.0 % 360.0
-            
+            # yaw_deg = math.degrees(mean_rad) % 360.0
+            # yaw_deg = (yaw_deg + 180.0) % 360.0
+
         yaw_rad = math.radians(yaw_deg)
         cy = math.cos(yaw_rad * 0.5)
         sy = math.sin(yaw_rad * 0.5)

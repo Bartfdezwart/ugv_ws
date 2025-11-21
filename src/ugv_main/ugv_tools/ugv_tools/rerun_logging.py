@@ -7,7 +7,7 @@ import numpy as np
 import rclpy
 import rerun as rr
 from cv_bridge import CvBridge
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import PoseStamped, PoseArray
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage, Image, JointState
 from ugv_interface.msg import AprilTagArray, LineArray
@@ -58,17 +58,14 @@ class RerunLogging(Node):
 
         # Movement update subscribers
         self.robot_pose_sub = self.create_subscription(
-            Pose2D,
-            "/robot_pose",
+            PoseStamped,
+            "/rover_pose",
             self.log_robot_pose,
             10,
         )
 
         self.camera_pose_sub = self.create_subscription(
-            JointState,
-            "/ugv/joint_states",
-            self.log_camera_pose,
-            10
+            JointState, "/ugv/joint_states", self.log_camera_pose, 10
         )
 
         # Detection subscribers
@@ -95,10 +92,14 @@ class RerunLogging(Node):
         self.clear_apriltags_timer = self.create_timer(0.2, self.clear_apriltags)
         self.apriltags_are_cleared = True
 
-        self.bridge = CvBridge()
+        self.beacon_sub = self.create_subscription(
+            PoseArray, "beacon_pose", self.log_beacons, 10
+        )
 
+        self.bridge = CvBridge()
         self.log_urdf()
         self.log_field()
+        rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Z_UP, static=True)
 
     def init_stream_sink(self):
         self.declare_parameter("rerun_ip", "127.0.0.1")
@@ -157,6 +158,51 @@ class RerunLogging(Node):
         field_path = WS_ROOT / "assets" / "field.glb"
         rr.log("/world/field", rr.Asset3D(path=field_path), static=True)
 
+    def log_beacons(self, beacon_poses: PoseArray):
+        translations = []
+        quaternions = []
+        for pose in beacon_poses.poses:
+            translations.append([pose.position.x, pose.position.y, pose.position.z])
+            quaternions.append(
+                [
+                    pose.orientation.x,
+                    pose.orientation.y,
+                    pose.orientation.z,
+                    pose.orientation.w,
+                ]
+            )
+        translations = np.array(translations)
+        quaternions = np.array(quaternions)
+
+        for i, (t, q) in enumerate(zip(translations, quaternions)):
+            rr.log(
+                f"world/beacons/beacon_{i}/plane",
+                rr.Boxes3D(sizes=[0.3, 0.28 * 2, 0.05], fill_mode="solid"),
+            )
+            rr.log(
+                f"world/beacons/beacon_{i}/plane",
+                rr.Transform3D(translation=[0.0, 0.0, -0.05])
+            )
+            rr.log(
+                f"world/beacons/beacon_{i}/xyz",
+                rr.Arrows3D(
+                    vectors=[[0.25, 0, 0], [0, 0.25, 0], [0, 0, 0.25]],
+                    colors=[[255, 0, 0], [0, 255, 0], [0, 0, 255]],
+                    radii=[0.02, 0.02, 0.02],
+                ),
+            )
+            rr.log(
+                f"world/beacons/beacon_{i}",
+                rr.Transform3D(translation=t, rotation=rr.Quaternion(xyzw=q)),
+            )
+
+            # rr.log(
+            #     f"world/beacons/beacon_{i}/xyz",
+            #     rr.Transform3D(rotation=rr.Quaternion(xyzw=q)),
+            # )
+
+        self.destroy_subscription(self.beacon_sub)
+
     def log_image(self, image: Image, image_name: str):
         cv_img = self.bridge.imgmsg_to_cv2(image, desired_encoding="bgr8")
 
@@ -164,9 +210,7 @@ class RerunLogging(Node):
         rr.set_time_nanos("ros_time", time_nanos)
         rr.log(f"camera/{image_name}", rr.Image(cv_img, rr.ColorModel.BGR))
 
-    def log_compressed_image(
-        self, compressed_image: CompressedImage, image_name: str
-    ):
+    def log_compressed_image(self, compressed_image: CompressedImage, image_name: str):
         cv_img = self.bridge.compressed_imgmsg_to_cv2(
             compressed_image, desired_encoding="bgr8"
         )
@@ -183,12 +227,12 @@ class RerunLogging(Node):
             index = joint_states.name.index("pt_base_link_to_pt_link1")
             angle = rr.Angle(rad=joint_states.position[index])
             rr.log(
-            "world/rover/base_footprint/base_link/pt_base_link/pt_link1",
-            rr.Transform3D(
-                clear=False,
-                rotation=rr.RotationAxisAngle(axis=(0, 0, 1), angle=angle),
-            ),
-        )
+                "world/rover/base_footprint/base_link/pt_base_link/pt_link1",
+                rr.Transform3D(
+                    clear=False,
+                    rotation=rr.RotationAxisAngle(axis=(0, 0, 1), angle=angle),
+                ),
+            )
         # list.index(a) gives a ValueError when `a` can not be found in `list`
         except ValueError:
             pass
@@ -197,29 +241,33 @@ class RerunLogging(Node):
             index = joint_states.name.index("pt_link1_to_pt_link2")
             angle = rr.Angle(rad=joint_states.position[index])
             rr.log(
-            "world/rover/base_footprint/base_link/pt_base_link/pt_link1/pt_link2",
-            rr.Transform3D(
-                clear=False,
-                rotation=rr.RotationAxisAngle(axis=(0, -1, 0), angle=angle),
-            ),
-        )
+                "world/rover/base_footprint/base_link/pt_base_link/pt_link1/pt_link2",
+                rr.Transform3D(
+                    clear=False,
+                    rotation=rr.RotationAxisAngle(axis=(0, -1, 0), angle=angle),
+                ),
+            )
         # list.index(a) gives a ValueError when `a` can not be found in `list`
         except ValueError:
             pass
 
-    def log_robot_pose(self, pose: Pose2D):
-        x = pose.x
-        y = pose.y
-        yaw = pose.theta
+    def log_robot_pose(self, pose: PoseStamped):
+        time_nanos = pose.header.stamp.sec * 1_000_000_000 + pose.header.stamp.nanosec
+        rr.set_time_nanos("ros_time", time_nanos)
+
+        point = pose.pose.position
+
+        x = point.y
+        y = -point.x
+        yaw = 0
 
         rr.log(
             "world/rover",
             rr.Transform3D(
                 translation=(x, y, 0),
-                rotation=rr.RotationAxisAngle((0,0,1), rr.Angle(rad=yaw))
-            )
+                rotation=rr.RotationAxisAngle((0, 0, 1), rr.Angle(rad=yaw)),
+            ),
         )
-
 
     def log_lines(self, lines: LineArray, line_name: str, rgb_color: tuple[int]):
         data = lines.data

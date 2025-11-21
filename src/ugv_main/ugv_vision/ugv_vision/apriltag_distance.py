@@ -7,6 +7,8 @@ from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo
 from ugv_interface.msg import AprilTag, AprilTagArray, Position
+from scipy.optimize import minimize
+from geometry_msgs.msg import Point, Pose, PoseStamped
 
 
 class ApriltagDistance(Node):
@@ -17,6 +19,7 @@ class ApriltagDistance(Node):
         self.tag_sub = self.create_subscription(AprilTagArray, '/apriltags', self.tag_callback, 10)
         self.tags_distance_pub = self.create_publisher(AprilTagArray, '/apriltags_distance', 10)
         self.position_pub = self.create_publisher(Position, '/rover_position', 10)
+        self.robot_pose_pub = self.create_publisher(PoseStamped, "/robot_pose", 10,)
 
         # Camera intrinsics
         self.tw = 0.160
@@ -36,6 +39,9 @@ class ApriltagDistance(Node):
 
         # Tag world coordinates
         self.tag_world_positions = {
+            1: np.array([0.0, -4.5]),
+            2: np.array([-3.0, -2.85]),
+            3: np.array([3.0, -2.85]),
             4: np.array([-3.0, 0.0]),
             5: np.array([3.0, 0.0]),
 
@@ -103,13 +109,16 @@ class ApriltagDistance(Node):
 
         rover_xy = self.svd_position(visible_ids, distances)
 
+        self.tags_distance_pub.publish(out_msg)
+
         if rover_xy is not None:
             pos = Position()
             pos.x = float(rover_xy[0])
             pos.y = float(rover_xy[1])
             self.position_pub.publish(pos)
-            self.tags_distance_pub.publish(out_msg)
 
+            pose = PoseStamped(pose=Pose(position=Point(x=float(rover_xy[0]), y=float(rover_xy[1]))), header=msg.header)
+            self.robot_pose_pub.publish(pose)
 
     def svd_position(self, tag_ids, distances):
 
@@ -156,7 +165,41 @@ class ApriltagDistance(Node):
         U, S, Vt = np.linalg.svd(A, full_matrices=False)
         x = Vt.T @ (np.linalg.inv(np.diag(S)) @ (U.T @ b))
 
-        return x[:2, 0]
+        position = x[:2, 0]
+
+        refined_position = self.refine_position(position, Ps, Ds)
+
+        return refined_position
+
+    def refine_position(
+        self,
+        initial_position,
+        beacon_positions,
+        distances,
+        tolerance = 1e-6,
+        max_iter = 20,
+    ):
+        def iterative_trilateration(position):
+            distance_errors = np.abs((distances - np.linalg.norm(beacon_positions[:, :2] - position, axis=1)) / distances)
+            return np.mean(distance_errors)
+
+        minimization_result = minimize(
+            iterative_trilateration,
+            initial_position.flatten(),
+            method="L-BFGS-B",
+            tol=tolerance,
+            bounds=(
+                (-3,3),
+                (-4.5, 4.5)
+            ),
+            options={
+                "maxiter": max_iter
+            }
+        )
+        if not minimization_result.success:
+            self.get_logger().warning(f"Refined position in max iterators: {minimization_result.nit}")
+        refined_position = minimization_result.x
+        return refined_position
 
 
 def main(args=None):
