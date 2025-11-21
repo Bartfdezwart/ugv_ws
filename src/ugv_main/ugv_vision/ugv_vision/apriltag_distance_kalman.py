@@ -19,6 +19,8 @@ class ApriltagDistance(Node):
         self.tags_distance_pub = self.create_publisher(AprilTagArray, '/apriltags_distance', 10)
         self.position_pub = self.create_publisher(PoseStamped, '/rover_pose', 10)
 
+        self.kalmancall = self.create_timer(0.1, self.kalman_timer)
+
         self.tw = 0.160
         self.K_received = False
         self.camera_info_sub = self.create_subscription(CameraInfo, "/camera_info", self.camera_info_callback, 10)
@@ -149,28 +151,16 @@ class ApriltagDistance(Node):
         rover_xy = self.svd_position(visible_ids, distances)
 
         self.tags_distance_pub.publish(out_msg)
-
-        self.kalman_predict()
-
+        
         if rover_xy is not None:
             rover_xy = self.kalman_update(rover_xy)
-            pos = Position()
-            pos.x = float(rover_xy[0])
-            pos.y = float(rover_xy[1])
-            q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
-        else:
-            pos = Position()
-            pos.x = float(self.x_kf[0])
-            pos.y = float(self.x_kf[1])
-            q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
 
-        rover_position = PoseStamped(
-            pose=Pose(
-                position=Point(x=pos.x, y=pos.y),
-                orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)
-            ),
-            header=msg.header
-        )
+        pos = Position()
+        pos.x = float(self.x_kf[0])
+        pos.y = float(self.x_kf[1])
+        q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
+
+        rover_position = PoseStamped(pose=Pose(position=Point(x=pos.x, y=pos.y), orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)), header=msg.header)
 
         self.position_pub.publish(rover_position)
 
@@ -217,6 +207,10 @@ class ApriltagDistance(Node):
         x = Vt.T @ (np.linalg.inv(np.diag(S)) @ (U.T @ b))
 
         return x[:2, 0]
+
+
+    def kalman_timer(self):
+        self.kalman_predict()
 
 
     def kalman_predict(self):
@@ -276,8 +270,6 @@ class ApriltagDistance(Node):
                 np.sum(np.cos(yaw_rad_list) * weights)
             )
             yaw_deg = math.degrees(mean_rad) + 180.0 % 360.0
-            # yaw_deg = math.degrees(mean_rad) % 360.0
-            # yaw_deg = (yaw_deg + 180.0) % 360.0
             
         yaw_rad = math.radians(yaw_deg)
         cy = math.cos(yaw_rad * 0.5)
