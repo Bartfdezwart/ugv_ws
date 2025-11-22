@@ -3,7 +3,8 @@ from rclpy.node import Node
 import math
 import threading
 import time
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import PoseStamped, Twist, PointStamped, Point
+from std_msgs.msg import Header
 from scipy.spatial.transform import Rotation
 
 
@@ -14,6 +15,8 @@ class ApriltagDrive(Node):
         self.pose_sub = self.create_subscription(
             PoseStamped, "/rover_pose", self.pose_callback, 10
         )
+        self.target_point_pub = self.create_publisher(PointStamped, "target_point", 10)
+
         self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
 
         self.current_x = None
@@ -38,6 +41,12 @@ class ApriltagDrive(Node):
                 text = input("Enter coordinate (x y): ")
                 x, y = map(float, text.split())
                 self.nav_target = (x, y)
+                self.target_point_pub.publish(
+                    PointStamped(
+                        point=Point(x=x, y=y),
+                        header=Header(stamp=self.get_clock().now().to_msg()),
+                    )
+                )
                 print(f"Target set: {x:.2f}, {y:.2f}")
             except:
                 print("Invalid input.")
@@ -47,9 +56,9 @@ class ApriltagDrive(Node):
         self.current_y = msg.pose.position.y
 
         q = msg.pose.orientation
-        quat = [q.x, q.y, q.z, q.w] 
+        quat = [q.x, q.y, q.z, q.w]
 
-        yaw = Rotation.from_quat(quat).as_euler('xyz')[2]
+        yaw = Rotation.from_quat(quat).as_euler("xyz")[2]
         self.current_yaw_deg = (math.degrees(yaw) + 360) % 360
 
         now = time.time()
@@ -74,7 +83,7 @@ class ApriltagDrive(Node):
             return None
 
         now = time.time()
-        dt = now - self.last_yaw_time  
+        dt = now - self.last_yaw_time
 
         predicted = (self.current_yaw_deg + self.yaw_rate * dt) % 360
         return predicted
@@ -86,7 +95,7 @@ class ApriltagDrive(Node):
         tx, ty = self.nav_target
         dx = tx - self.current_x
         dy = ty - self.current_y
-        distance = math.sqrt(dx*dx + dy*dy)
+        distance = math.sqrt(dx * dx + dy * dy)
 
         desired_yaw = (math.degrees(math.atan2(dy, dx)) + 360) % 360
 
