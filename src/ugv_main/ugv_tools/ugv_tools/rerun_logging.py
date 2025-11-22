@@ -90,7 +90,7 @@ class RerunLogging(Node):
         # April tag logging
         self.apriltags_sub = self.create_subscription(
             AprilTagArray,
-            "/apriltags",
+            "/apriltags_distance",
             self.log_april_tag,
             10,
         )
@@ -327,14 +327,16 @@ class RerunLogging(Node):
         lines = []
         half_sizes = []
         labels = []
+        distances = []
+        class_ids = []
         for tag in apriltags.detections:
             center = (
-                np.array((tag.centre.x, tag.centre.y)) * IMAGE_DETECTION_TO_STREAM_SCALE
+                np.array((tag.centre.x, tag.centre.y)) / IMAGE_DETECTION_TO_STREAM_SCALE
             )
 
             corners = (
                 np.array([(corner.x, corner.y) for corner in tag.corners])
-                * IMAGE_DETECTION_TO_STREAM_SCALE
+                / IMAGE_DETECTION_TO_STREAM_SCALE
             )
             lines.append(np.vstack([corners, corners[0]]))
 
@@ -344,16 +346,26 @@ class RerunLogging(Node):
 
             centers.append(center)
             half_sizes.append(half_size)
-            labels.append(f"Tag {tag.id}")
+            distances.append(f"{tag.distance:.3f}")
+            class_ids.append(tag.id)
 
         # Log detected apriltags
         rr.log(
-            "apriltag",
+            "apriltags/outlines",
             rr.LineStrips2D(
                 lines,
-                colors=[(0, 255, 0)] * len(lines),
-                labels=labels,
-                show_labels=True,
+                class_ids=class_ids,
+                radii=1.0,
+            ),
+        )
+        rr.log(
+            "apriltags/center",
+            rr.Points2D(centers, radii=1.5, class_ids=class_ids),
+        )
+        rr.log(
+            "apriltags/distance",
+            rr.Points2D(
+                centers, labels=distances, class_ids=class_ids, show_labels=True
             ),
         )
 
@@ -373,12 +385,15 @@ class RerunLogging(Node):
 
         point = stamped_point.point
 
-        rr.log("world/target_point", rr.Ellipsoids3D(
-            centers=[[point.y, -point.x, 0]],
-            fill_mode=rr.components.FillMode.Solid,
-            half_sizes=[[0.075, 0.075, 0.075]],
-            colors=[[255, 0, 0]],
-        ))
+        rr.log(
+            "world/target_point",
+            rr.Ellipsoids3D(
+                centers=[[point.y, -point.x, 0]],
+                fill_mode=rr.components.FillMode.Solid,
+                half_sizes=[[0.075, 0.075, 0.075]],
+                colors=[[255, 0, 0]],
+            ),
+        )
 
 
 def main(args=None):
