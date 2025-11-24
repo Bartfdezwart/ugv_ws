@@ -7,6 +7,7 @@ from ugv_interface.msg import AprilTag, AprilTagArray, Position
 import math
 from scipy.optimize import minimize
 from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+from std_msgs.msg import Header
 
 from time import sleep
 
@@ -25,6 +26,7 @@ class ApriltagDistance(Node):
 
 
         self.kalmancall = self.create_timer(0.1, self.kalman_timer)
+        self.pose_update = self.create_timer(0.1, self.update_pose)
 
         self.tw = 0.160
         self.K_received = False
@@ -39,12 +41,6 @@ class ApriltagDistance(Node):
 
         self.scale = 2
         self.K = []
-
-        self.x_kf = np.zeros((4, 1), float)
-        self.P_kf = np.eye(4, dtype=float)
-        self.R_kf = 0.05 * np.eye(2, dtype=float)
-        self.Q_kf_base = 0.01 * np.eye(4, dtype=float)
-        self.last_t = None
 
         self.tag_world_positions = {
             1: np.array([0.0, -4.5]),
@@ -76,21 +72,26 @@ class ApriltagDistance(Node):
 
         # KALMAN PARAMS
         self.kf_dt = 0.1
+        # State transition model
         self.kf_F = np.array([
-            [1, 0, self.kf_dt, 0],
-            [0, 1, 0, self.kf_dt],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
+            [1, 0, self.kf_dt, 0, 0, 0],
+            [0, 1, 0, self.kf_dt, 0, 0],
+            [0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 1, self.kf_dt],
+            [0, 0, 0, 0, 0, 1],
         ])
-        self.kf_B = np.zeros((4, 2))
-        self.kf_H = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0]
+        # Observation model
+        self.kf_full_H = np.array([
+            [1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0],
         ])
-        self.kf_Q = np.eye(4) * 0.001
-        self.kf_R = np.eye(2) * 0.05
-        self.kf_x0 = np.zeros((4, 1))
-        self.kf_P0 = np.eye(4)
+        self.kf_Q = np.eye(6) * 0.001
+        self.kf_full_R = np.eye(3) * 0.05
+        # Initial state vector and covariance
+        self.x_kf = np.zeros((6, 1), float)
+        self.P_kf = np.eye(6, dtype=float)
 
 
     def camera_info_callback(self, msg: CameraInfo):
@@ -154,27 +155,38 @@ class ApriltagDistance(Node):
 
 
         rover_xy = self.svd_position(visible_ids, distances)
-        
-        print(rover_xy)
-        print(visible_ids)
-        rotation = 0.0
-        if rover_xy is None:
-            self.rotate_camera(self.x_kf[0], self.x_kf[1], rotation)
-            return
+        rover_yaw = self.rover_orientation(visible_ids, distances, rvecs)
+
+        # print(rover_xy)
+        # print(visible_ids)
+        # rotation = 0.0
+        # if rover_xy is None:
+        #     self.rotate_camera(self.x_kf[0], self.x_kf[1], rotation)
+        #     return
 
         self.tags_distance_pub.publish(out_msg)
-        
-        if rover_xy is not None:
-            rover_xy = self.kalman_update(rover_xy)
 
-        pos = Position()
-        pos.x = float(self.x_kf[0])
-        pos.y = float(self.x_kf[1])
-        q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
+        has_position_measure = rover_xy is not None
+        has_orientation_measure = rover_yaw is not None
+        self.set_H_R(
+            position=has_position_measure,
+            orientation=has_orientation_measure
+        )
 
-        rover_position = PoseStamped(pose=Pose(position=Point(x=pos.x, y=pos.y), orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)), header=msg.header)
+        measurements = self.combine_non_none(rover_xy, rover_yaw)
 
-        self.position_pub.publish(rover_position)
+        if measurements.size > 0:
+            self.kalman_update(measurements)
+
+
+        # pos = Position()
+        # pos.x = float(self.x_kf[0])
+        # pos.y = float(self.x_kf[1])
+        # q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
+
+        # rover_position = PoseStamped(pose=Pose(position=Point(x=pos.x, y=pos.y), orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)), header=msg.header)
+
+        # self.position_pub.publish(rover_position)
 
 
     def svd_position(self, tag_ids, distances):
@@ -253,29 +265,29 @@ class ApriltagDistance(Node):
             self.get_logger().warning(f"Refined position in max iterators: {minimization_result.nit}")
         refined_position = minimization_result.x
         return refined_position
-    
+
     def rotate_camera(self, x, y, rotation):
         try:
             rover_pos = np.array([x, y])
             distances = []
-            
+
             for tag_id, tag_pos in self.tag_world_positions.items():
                 dist = np.linalg.norm(rover_pos - tag_pos)
                 distances.append((dist, tag_id))
-            
+            # Get the 2 closest tags
             closest_points = sorted(distances, key=lambda item: item[0])[:2]
             target_tags = [tag_id for _, tag_id in closest_points]
-            
+
             print("Best target tags: ", target_tags)
-            
+
             target = (self.tag_world_positions[target_tags[0]] + self.tag_world_positions[target_tags[1]]) / 2.0
-            
+
             # Calculate angle to target
             delta_x = target[0] - x
             delta_y = target[1] - y
             angle_to_target = rotation - math.atan2(delta_y, delta_x)
             print(f"Rotating camera to angle (rad): {angle_to_target}")
-                    
+
             js_msg = JointState()
             js_msg.name = ['pt_base_link_to_pt_link1', 'pt_link1_to_pt_link2']
             js_msg.position = [angle_to_target, 0.0]  # Rotate from -60 to +60 degrees
@@ -300,7 +312,7 @@ class ApriltagDistance(Node):
     def kalman_update(self, z):
         H = self.kf_H
         R = self.kf_R
-        z = np.array(z).reshape(2, 1)
+        z = np.array(z).reshape(-1, 1)
         y = z - H @ self.x_kf
         S = H @ self.P_kf @ H.T + R
         K = self.P_kf @ H.T @ np.linalg.inv(S)
@@ -308,8 +320,32 @@ class ApriltagDistance(Node):
         I = np.eye(self.P_kf.shape[0])
         self.P_kf = (I - K @ H) @ self.P_kf
 
-        return self.x_kf[:2, 0]
+    def set_H_R(self, *, position: bool, orientation: bool):
+        rows = []
+        if position:
+            rows.extend([0, 1])
+        if orientation:
+            rows.append(2)
+        self.kf_H = self.kf_full_H[rows]
+        self.kf_R = self.kf_full_R[rows]
 
+    def combine_non_none(self, *args):
+        values = []
+
+        for arg in args:
+            if arg is None:
+                continue
+            # try to iterate if it’s array-like
+            try:
+                iter(arg)
+            except TypeError:
+                # scalar, append as single element
+                values.append(arg)
+            else:
+                # iterable, extend values
+                values.extend(arg)
+
+        return np.array(values, dtype=float)
 
     def rover_orientation(self, visible_ids, distances, rvecs):
         yaw_list = []
@@ -337,24 +373,43 @@ class ApriltagDistance(Node):
             weight_list.append(w)
 
         if not yaw_list:
+            return None
             yaw_deg = 0.0
-        else:
-            yaw_rad_list = [math.radians(y) for y in yaw_list]
-            weights = np.array(weight_list)
 
-            mean_rad = math.atan2(
-                np.sum(np.sin(yaw_rad_list) * weights),
-                np.sum(np.cos(yaw_rad_list) * weights)
-            )
-            yaw_deg = math.degrees(mean_rad) + 180.0 % 360.0
-            # yaw_deg = math.degrees(mean_rad) % 360.0
-            # yaw_deg = (yaw_deg + 180.0) % 360.0
+        yaw_rad_list = [math.radians(y) for y in yaw_list]
+        weights = np.array(weight_list)
+
+        mean_rad = math.atan2(
+            np.sum(np.sin(yaw_rad_list) * weights),
+            np.sum(np.cos(yaw_rad_list) * weights)
+        )
+        yaw_deg = (math.degrees(mean_rad) + 180.0) % 360.0
+        # yaw_deg = math.degrees(mean_rad) % 360.0
+        # yaw_deg = (yaw_deg + 180.0) % 360.0
 
         yaw_rad = math.radians(yaw_deg)
+        return yaw_rad
         cy = math.cos(yaw_rad * 0.5)
         sy = math.sin(yaw_rad * 0.5)
 
         return 0.0, 0.0, sy, cy
+
+    def update_pose(self):
+        x = float(self.x_kf[0])
+        y = float(self.x_kf[1])
+        yaw = self.x_kf[4]
+
+        cy = math.cos(yaw * 0.5)
+        sy = math.sin(yaw * 0.5)
+
+        rover_position = PoseStamped(
+            pose=Pose(
+                position=Point(x=x, y=y),
+                orientation=Quaternion(x=0.0, y=0.0, z=sy, w=cy)
+            ),
+            header=Header(stamp=self.get_clock().now().to_msg())
+        )
+        self.position_pub.publish(rover_position)
 
 
 def main(args=None):
