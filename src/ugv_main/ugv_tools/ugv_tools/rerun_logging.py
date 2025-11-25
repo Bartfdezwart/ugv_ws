@@ -9,7 +9,7 @@ import rerun as rr
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage, Image, JointState
+from sensor_msgs.msg import CompressedImage, Image, JointState, LaserScan
 from ugv_interface.msg import AprilTagArray, LineArray
 
 from ugv_tools.urdf_loader import URDFLogger, origin_to_transform
@@ -103,6 +103,11 @@ class RerunLogging(Node):
 
         self.beacon_sub = self.create_subscription(
             PoseArray, "beacon_pose", self.log_beacons, 10
+        )
+
+        # Lidar logging
+        self.lidar_sub = self.create_subscription(
+            LaserScan, "/scan", self.log_lidar, 10
         )
 
         self.bridge = CvBridge()
@@ -394,6 +399,29 @@ class RerunLogging(Node):
                 colors=[[255, 0, 0]],
             ),
         )
+
+    def log_lidar(self, laser_scan: LaserScan):
+        stamp = laser_scan.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+        range_min = laser_scan.range_min
+        range_max = laser_scan.range_max
+
+        points = [
+            (scan_range, idx * laser_scan.angle_increment)
+            for idx, scan_range in enumerate(laser_scan.ranges)
+            if scan_range < range_max and scan_range > range_min
+        ]
+
+        points_xy = map(
+            lambda polar_point: (
+                polar_point[0] * np.cos(polar_point[1]),
+                polar_point[0] * np.sin(polar_point[1]),
+                0.0,
+            ),
+            points,
+        )
+        rr.log("/world/rover/base_footprint/base_link/base_lidar_link/lidar", rr.Points3D(list(points_xy)))
 
 
 def main(args=None):
