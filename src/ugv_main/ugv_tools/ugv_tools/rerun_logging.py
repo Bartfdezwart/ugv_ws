@@ -438,7 +438,7 @@ class RerunLogging(Node):
         rr.log(
             "world/path/point",
             rr.Points3D(
-                centers=path_points,
+                path_points,
             ),
         )
 
