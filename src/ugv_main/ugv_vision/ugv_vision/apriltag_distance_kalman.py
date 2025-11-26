@@ -327,7 +327,7 @@ class ApriltagDistance(Node):
         if orientation:
             rows.append(2)
         self.kf_H = self.kf_full_H[rows]
-        self.kf_R = self.kf_full_R[rows]
+        self.kf_R = np.diag(np.diagonal(self.kf_full_R)[rows])
 
     def combine_non_none(self, *args):
         values = []

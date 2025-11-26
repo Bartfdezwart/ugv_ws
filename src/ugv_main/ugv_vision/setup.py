@@ -37,6 +37,7 @@ setup(
             'apriltag_track_1 = ugv_vision.apriltag_track_1:main',
             'apriltag_track_2 = ugv_vision.apriltag_track_2:main',
             'rectify_camera = ugv_vision.rectify_camera:main',
+            'rover_detector = ugv_vision.rover_detector:main',
         ],
     },
 )
