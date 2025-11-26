@@ -11,6 +11,7 @@ from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage, Image, JointState, LaserScan
 from ugv_interface.msg import AprilTagArray, LineArray
+from nav_2d_msgs.msg import Path2D
 
 from ugv_tools.urdf_loader import URDFLogger, origin_to_transform
 
@@ -108,6 +109,11 @@ class RerunLogging(Node):
         # Lidar logging
         self.lidar_sub = self.create_subscription(
             LaserScan, "/scan", self.log_lidar, 10
+        )
+
+        # Path logging
+        self.path_sub = self.create_subscription(
+            Path2D, "/path", self.log_path, 10
         )
 
         self.bridge = CvBridge()
@@ -422,6 +428,19 @@ class RerunLogging(Node):
             points,
         )
         rr.log("/world/rover/base_footprint/base_link/base_lidar_link/lidar", rr.Points3D(list(points_xy)))
+
+    def log_path(self, path: Path2D):
+        stamp = path.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+        path_points = [(point.y, -point.x, 0.01) for point in path.poses]
+
+        rr.log(
+            "world/path/point",
+            rr.Points3D(
+                centers=path_points,
+            ),
+        )
 
 
 def main(args=None):
