@@ -33,7 +33,7 @@ class ApriltagDistance(Node):
 
         self.tw = 0.160
         self.K_received = False
-        self.camera_info_sub = self.create_subscription(CameraInfo, "/camera_info", self.camera_info_callback, 10)
+        self.camera_info_sub = self.create_subscription(CameraInfo, "/camera_matrix", self.camera_info_callback, 10)
 
         self.tag_points_3d = np.array([
             [-self.tw/2,  self.tw/2, 0],
