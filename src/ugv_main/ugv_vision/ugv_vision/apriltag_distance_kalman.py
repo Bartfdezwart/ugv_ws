@@ -3,11 +3,13 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo, JointState
-from ugv_interface.msg import AprilTag, AprilTagArray, Position
+from ugv_interface.msg import AprilTag, AprilTagArray
 import math
 from scipy.optimize import minimize
-from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion, Twist
 from std_msgs.msg import Header
+
+from filterpy.kalman import UnscentedKalmanFilter, MerweScaledSigmaPoints
 
 from time import sleep
 
@@ -24,9 +26,10 @@ class ApriltagDistance(Node):
         # Subscribe to joint states (ugv/joint_states topic)
         self.joint_states_pub = self.create_publisher(JointState, '/ugv/joint_states', 10)
 
+        self.velocity_cmd = self.create_subscription(Twist, '/cmd_vel', self.velocity_callback, 10)
 
-        self.kalmancall = self.create_timer(0.1, self.kalman_timer)
-        self.pose_update = self.create_timer(0.1, self.update_pose)
+        self.linear_velocity = 0.0
+        self.angular_velocity = 0.0
 
         self.tw = 0.160
         self.K_received = False
@@ -70,28 +73,112 @@ class ApriltagDistance(Node):
             10: 180,
         }
 
-        # KALMAN PARAMS
+        # Delta time use for the Kalman filter
         self.kf_dt = 0.1
-        # State transition model
-        self.kf_F = np.array([
-            [1, 0, self.kf_dt, 0, 0, 0],
-            [0, 1, 0, self.kf_dt, 0, 0],
-            [0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 1, self.kf_dt],
-            [0, 0, 0, 0, 0, 1],
-        ])
-        # Observation model
-        self.kf_full_H = np.array([
-            [1, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0],
-        ])
-        self.kf_Q = np.eye(6) * 0.001
-        self.kf_full_R = np.eye(3) * 0.05
-        # Initial state vector and covariance
-        self.x_kf = np.zeros((6, 1), float)
-        self.P_kf = np.eye(6, dtype=float)
+
+        self.ukf_init()
+        self.kalmancall = self.create_timer(self.kf_dt, self.kalman_timer)
+        self.pose_update = self.create_timer(0.1, self.update_pose)
+
+        self.get_logger().info("Node started")
+
+    # Initializes the UKF
+    def ukf_init(self):
+        def fx(x, dt, linear_velocity, angular_velocity):
+            px, py, theta = x
+            offset = np.pi / 2
+            px_new = px + linear_velocity * np.cos(theta + offset) * dt
+            py_new = py + linear_velocity * np.sin(theta + offset) * dt
+            theta_new = theta + angular_velocity * dt
+
+            return np.array([px_new, py_new, theta_new])
+
+        points = MerweScaledSigmaPoints(3, alpha=0.1, beta=2.0, kappa=-1)
+
+        def x_mean_fn(sigmas, Wm):
+            x = np.dot(Wm, sigmas[:, 0])
+            y = np.dot(Wm, sigmas[:, 1])
+
+            sin_sum = np.dot(Wm, np.sin(sigmas[:, 2]))
+            cos_sum = np.dot(Wm, np.cos(sigmas[:, 2]))
+            theta = np.arctan2(sin_sum, cos_sum)
+
+            return np.array([x, y, theta])
+
+        def residual_x(a, b):
+            y = a - b
+            y[2] = (y[2] + np.pi) % (2*np.pi) - np.pi
+            return y
+
+        def make_z_mean_fn(angle_idx=None):
+            def z_mean_fn(sigmas, Wm):
+                mean = np.dot(Wm, sigmas)
+                if angle_idx is not None:
+                    sin_sum = np.dot(Wm, np.sin(sigmas[:, angle_idx]))
+                    cos_sum = np.dot(Wm, np.cos(sigmas[:, angle_idx]))
+                    mean[angle_idx] = np.arctan2(sin_sum, cos_sum)
+                return mean
+            return z_mean_fn
+
+        def make_residual_z(angle_idx=None):
+            def residual_z(a, b):
+                y = a - b
+                if angle_idx is not None:
+                    y[angle_idx] = (y[angle_idx] + np.pi) % (2*np.pi) - np.pi
+                return y
+            return residual_z
+
+        def make_hx(*, position: bool = False, orientation: bool = False):
+            indices = []
+            if position:
+                indices.extend([0, 1])
+            if orientation:
+                indices.append(2)
+
+            def hx(x):
+                h = x[indices]
+                return h
+            return hx
+
+        def make_R(
+            *,
+            position_std: float | None = None,
+            orientation_std: float | None = None,
+        ):
+            diagonal = []
+            if position_std:
+                diagonal.extend([position_std**2, position_std**2])
+            if orientation_std:
+                diagonal.append(orientation_std**2)
+
+            R = np.diag(diagonal)
+            return R
+
+
+
+        self.make_z_mean_fn = make_z_mean_fn
+        self.make_residual_z = make_residual_z
+        self.make_hx = make_hx
+        self.make_R = make_R
+        self.ukf = UnscentedKalmanFilter(
+            dim_x=3,
+            dim_z=3,
+            dt=self.kf_dt,
+            hx=None,
+            fx=fx,
+            points=points,
+            x_mean_fn=x_mean_fn,
+            z_mean_fn=None,
+            residual_x=residual_x,
+            residual_z=None,
+        )
+
+        self.ukf.x = np.array([0., 0., 0.]) # initial state
+        self.ukf.P *= 0.2 # initial uncertainty
+        self.ukf.Q = np.diag([0.01, 0.01, 0.001])**2
+
+        self.apriltag_position_measurement_std = 0.1
+        self.apriltag_orientation_measurement_std = 0.1
 
 
     def camera_info_callback(self, msg: CameraInfo):
@@ -110,6 +197,10 @@ class ApriltagDistance(Node):
         self.get_logger().info("Camera intrinsics stored.")
         self.K_received = True
 
+    def velocity_callback(self, vel_cmd: Twist):
+        # Update the rover velocity from the send velocity commands
+        self.linear_velocity = vel_cmd.linear.x
+        self.angular_velocity = vel_cmd.angular.z
 
     def tag_callback(self, msg: AprilTagArray):
 
@@ -157,36 +248,41 @@ class ApriltagDistance(Node):
         rover_xy = self.svd_position(visible_ids, distances)
         rover_yaw = self.rover_orientation(visible_ids, distances, rvecs)
 
-        # print(rover_xy)
-        # print(visible_ids)
-        # rotation = 0.0
-        # if rover_xy is None:
-        #     self.rotate_camera(self.x_kf[0], self.x_kf[1], rotation)
-        #     return
-
         self.tags_distance_pub.publish(out_msg)
 
+        # UKF measurement update
         has_position_measure = rover_xy is not None
         has_orientation_measure = rover_yaw is not None
-        self.set_H_R(
-            position=has_position_measure,
-            orientation=has_orientation_measure
-        )
+
+        # Do nothing if there are no measurements
+        if not has_position_measure and not has_orientation_measure:
+            return
+
+        # Setting the z_mean and residual_z
+        # Determine which measurement index corresponds to an angle, if any
+        angle_idx = None
+        if has_orientation_measure:
+            # Start with the first element for orientation if no position measurements
+            angle_idx = 0 if not has_position_measure else 2
+
+        self.ukf.z_mean = self.make_z_mean_fn(angle_idx)
+        self.ukf.residual_z = self.make_residual_z(angle_idx)
+
+        # Setting the measurement noise
+        pos_std = None
+        orientation_std = None
+        if has_position_measure:
+            pos_std = self.apriltag_position_measurement_std
+        if has_orientation_measure:
+            orientation_std = self.apriltag_orientation_measurement_std
+        R = self.make_R(position_std=pos_std, orientation_std=orientation_std)
+
+        # Setting the measurement model
+        H = self.make_hx(position=has_position_measure, orientation=has_orientation_measure)
 
         measurements = self.combine_non_none(rover_xy, rover_yaw)
 
-        if measurements.size > 0:
-            self.kalman_update(measurements)
-
-
-        # pos = Position()
-        # pos.x = float(self.x_kf[0])
-        # pos.y = float(self.x_kf[1])
-        # q_x, q_y, q_z, q_w = self.rover_orientation(visible_ids, distances, rvecs)
-
-        # rover_position = PoseStamped(pose=Pose(position=Point(x=pos.x, y=pos.y), orientation=Quaternion(x=q_x, y=q_y, z=q_z, w=q_w)), header=msg.header)
-
-        # self.position_pub.publish(rover_position)
+        self.ukf.update(measurements, R, hx=H)
 
 
     def svd_position(self, tag_ids, distances):
@@ -299,35 +395,12 @@ class ApriltagDistance(Node):
 
 
     def kalman_timer(self):
-        self.kalman_predict()
-
-
-    def kalman_predict(self):
-        self.x_kf = self.kf_F @ self.x_kf
-        self.P_kf = self.kf_F @ self.P_kf @ self.kf_F.T + self.kf_Q
-
-        return self.x_kf
-
-
-    def kalman_update(self, z):
-        H = self.kf_H
-        R = self.kf_R
-        z = np.array(z).reshape(-1, 1)
-        y = z - H @ self.x_kf
-        S = H @ self.P_kf @ H.T + R
-        K = self.P_kf @ H.T @ np.linalg.inv(S)
-        self.x_kf = self.x_kf + K @ y
-        I = np.eye(self.P_kf.shape[0])
-        self.P_kf = (I - K @ H) @ self.P_kf
-
-    def set_H_R(self, *, position: bool, orientation: bool):
-        rows = []
-        if position:
-            rows.extend([0, 1])
-        if orientation:
-            rows.append(2)
-        self.kf_H = self.kf_full_H[rows]
-        self.kf_R = np.diag(np.diagonal(self.kf_full_R)[rows])
+        # Update the next state estimation and uncertainty
+        self.ukf.predict(
+            self.kf_dt,
+            linear_velocity=self.linear_velocity,
+            angular_velocity=self.angular_velocity,
+        )
 
     def combine_non_none(self, *args):
         values = []
@@ -395,10 +468,12 @@ class ApriltagDistance(Node):
         return 0.0, 0.0, sy, cy
 
     def update_pose(self):
-        x = float(self.x_kf[0])
-        y = float(self.x_kf[1])
-        yaw = self.x_kf[4]
+        # Get the estimated pose from the UKF
+        x = float(self.ukf.x[0])
+        y = float(self.ukf.x[1])
+        yaw = float(self.ukf.x[2])
 
+        # Transform the yaw of the robot to a quaternion
         cy = math.cos(yaw * 0.5)
         sy = math.sin(yaw * 0.5)
 
@@ -409,6 +484,7 @@ class ApriltagDistance(Node):
             ),
             header=Header(stamp=self.get_clock().now().to_msg())
         )
+        # Publish the rover position
         self.position_pub.publish(rover_position)
 
 

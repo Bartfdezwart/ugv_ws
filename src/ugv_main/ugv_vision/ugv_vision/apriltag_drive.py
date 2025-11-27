@@ -1,3 +1,4 @@
+import numpy as np
 import rclpy
 from rclpy.node import Node
 import math
@@ -6,6 +7,7 @@ import time
 from geometry_msgs.msg import PoseStamped, Twist, PointStamped, Point
 from std_msgs.msg import Header
 from scipy.spatial.transform import Rotation
+from nav_2d_msgs.msg import Path2D
 
 
 class ApriltagDrive(Node):
@@ -17,11 +19,18 @@ class ApriltagDrive(Node):
         )
         self.target_point_pub = self.create_publisher(PointStamped, "target_point", 10)
 
+        self.path_sub = self.create_subscription(Path2D, "/path", self.path_callback, 10)
+
         self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
 
         self.current_x = None
         self.current_y = None
+        self.current_yaw = None
         self.current_yaw_deg = None
+
+        self.path = None
+        self.path_point_idx = 0
+        self.path_len = None
 
         self.last_yaw_time = None
 
@@ -40,7 +49,7 @@ class ApriltagDrive(Node):
             try:
                 text = input("Enter coordinate (x y): ")
                 x, y = map(float, text.split())
-                self.nav_target = (x, y)
+                # self.nav_target = (x, y)
                 self.target_point_pub.publish(
                     PointStamped(
                         point=Point(x=x, y=y),
@@ -59,6 +68,7 @@ class ApriltagDrive(Node):
         quat = [q.x, q.y, q.z, q.w]
 
         yaw = Rotation.from_quat(quat).as_euler("xyz")[2]
+        self.current_yaw = yaw
         self.current_yaw_deg = (math.degrees(yaw) + 360) % 360
 
         now = time.time()
@@ -77,22 +87,75 @@ class ApriltagDrive(Node):
             if dt > 0:
                 self.yaw_rate = d / dt
 
-    def predict_yaw(self):
-        """Predict yaw when no new detection arrives."""
-        if self.current_yaw_deg is None or self.last_yaw_time is None:
-            return None
+    def path_callback(self, path: Path2D):
+        self.path = path.poses
+        self.path_point_idx = 0
+        self.path_point_target_idx = self.path_point_idx + 10
+        self.path_len = len(self.path)
+        pose = self.path[self.path_point_idx]
+        self.nav_target = (pose.x, pose.y)
 
-        now = time.time()
-        dt = now - self.last_yaw_time
+        pose = self.path[self.path_point_target_idx]
+        self.direction_target = (pose.x, pose.y)
 
-        predicted = (self.current_yaw_deg + self.yaw_rate * dt) % 360
-        return predicted
+    # def predict_yaw(self):
+    #     """Predict yaw when no new detection arrives."""
+    #     if self.current_yaw_deg is None or self.last_yaw_time is None:
+    #         return None
+
+    #     now = time.time()
+    #     dt = now - self.last_yaw_time
+
+    #     predicted = (self.current_yaw_deg + self.yaw_rate * dt) % 360
+    #     return predicted
 
     def control_loop(self):
         if self.nav_target is None or self.current_x is None:
             return
 
-        tx, ty = self.nav_target
+        current_position = np.array([self.current_x, self.current_y])
+
+        pose = self.path[self.path_point_idx]
+        current_target = np.array([pose.x, pose.y])
+        dist_to_current_target = np.linalg.norm(current_target - current_position)
+
+        if self.path_point_idx + 1 < self.path_len:
+            future_pose = self.path[self.path_point_idx + 1]
+            future_target = np.array([future_pose.x, future_pose.y])
+            dist_to_future_target = np.linalg.norm(future_target - current_position)
+
+        if dist_to_current_target < 0.05:
+            self.path_point_idx += 1
+            self.path_point_target_idx += 1
+            # If robot reached the final path point stop driving
+            if self.path_point_idx == self.path_len:
+                twist = Twist()
+                twist.linear.x = 0.0
+                twist.angular.z = 0.0
+                self.cmd_pub.publish(twist)
+                self.get_logger().info("Reached target.")
+                self.nav_target = None
+                return
+
+            # If robot reached current target set navigation to next one
+            pose = self.path[self.path_point_idx]
+            self.nav_target = (pose.x, pose.y)
+
+            pose = self.path[self.path_point_target_idx]
+            self.direction_target = (pose.x, pose.y)
+
+        elif dist_to_future_target < dist_to_current_target:
+            self.path_point_idx += 1
+            self.path_point_target_idx += 1
+
+            pose = self.path[self.path_point_idx]
+            self.nav_target = (pose.x, pose.y)
+
+            pose = self.path[self.path_point_target_idx]
+            self.direction_target = (pose.x, pose.y)
+
+
+        tx, ty = self.direction_target
         dx = tx - self.current_x
         dy = ty - self.current_y
         distance = math.sqrt(dx * dx + dy * dy)
@@ -100,35 +163,43 @@ class ApriltagDrive(Node):
         desired_yaw = (math.degrees(math.atan2(dy, dx)) + 360) % 360
 
         # use measured yaw if available
-        if self.current_yaw_deg is not None:
-            yaw_error = self.normalize_angle(desired_yaw - self.current_yaw_deg)
-        else:
-            # fallback to predicted yaw
-            predicted = self.predict_yaw()
-            if predicted is None:
-                return
-            yaw_error = self.normalize_angle(desired_yaw - predicted)
+        # if self.current_yaw_deg is not None:
+        #     yaw_error = self.normalize_angle(desired_yaw - self.current_yaw_deg)
+        # else:
+        #     # fallback to predicted yaw
+        #     predicted = self.predict_yaw()
+        #     if predicted is None:
+        #         return
+        #     yaw_error = self.normalize_angle(desired_yaw - predicted)
 
-            # get accuracy before moving
-            if abs(yaw_error) > 10:
-                return
+        #     # get accuracy before moving
+        #     if abs(yaw_error) > 10:
+        #         return
+
+        desired_yaw = math.atan2(-dx, dy)
+        yaw_error = desired_yaw - self.current_yaw
+        yaw_error = math.atan2(math.sin(yaw_error), math.cos(yaw_error))
 
         twist = Twist()
 
-        if distance < 0.20:
-            twist.linear.x = 0.0
-            twist.angular.z = 0.0
-            self.cmd_pub.publish(twist)
-            print("Reached target.")
-            self.nav_target = None
-            return
+        # if distance < 0.05:
+        #     twist.linear.x = 0.0
+        #     twist.angular.z = 0.0
+        #     self.cmd_pub.publish(twist)
+        #     print("Reached target.")
+        #     self.nav_target = None
+        #     return
 
-        if abs(yaw_error) > 15:
+        if abs(yaw_error) > 0.1:
             twist.linear.x = 0.0
-            twist.angular.z = 0.35 if yaw_error > 0 else -0.35
+        #     twist.angular.z = 0.35 if yaw_error > 0 else -0.35
         else:
             twist.linear.x = 0.25
-            twist.angular.z = 0.0
+        #     twist.angular.z = 0.0
+
+        # twist.linear.x = 0.1
+        twist.angular.z = 0.5 * yaw_error
+        print(f"{self.path_point_idx}/{self.path_len}")
 
         self.cmd_pub.publish(twist)
 

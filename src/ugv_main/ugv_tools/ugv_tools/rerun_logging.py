@@ -254,7 +254,7 @@ class RerunLogging(Node):
         rr.set_time_nanos("ros_time", time_nanos)
         rr.log(
             f"camera/compressed/{image_name}",
-            rr.Image(cv_img, rr.ColorModel.BGR).compress(),
+            rr.Image(cv_img, rr.ColorModel.BGR),
         )
 
     def log_camera_pose(self, joint_states: JointState):
@@ -433,7 +433,7 @@ class RerunLogging(Node):
         stamp = path.header.stamp
         rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
 
-        path_points = [(point.y, -point.x, 0.01) for point in path.poses]
+        path_points = [(point.y, -point.x, 0.04) for point in path.poses]
 
         rr.log(
             "world/path/point",
