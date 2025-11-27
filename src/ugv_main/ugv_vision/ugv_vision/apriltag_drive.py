@@ -120,15 +120,9 @@ class ApriltagDrive(Node):
         current_target = np.array([pose.x, pose.y])
         dist_to_current_target = np.linalg.norm(current_target - current_position)
 
-        if self.path_point_idx + 1 < self.path_len:
-            future_pose = self.path[self.path_point_idx + 1]
-            future_target = np.array([future_pose.x, future_pose.y])
-            dist_to_future_target = np.linalg.norm(future_target - current_position)
-
         if (self.path_len - self.path_point_idx) < self.look_ahead_offset:
             goal = self.path[-1]
-            distance_to_goal = np.array([goal.x, goal.y])
-            print("Dist to goal:", distance_to_goal)
+            distance_to_goal = np.linalg.norm(np.array([goal.x, goal.y]))
             if distance_to_goal < 0.2:
                 twist = Twist()
                 twist.linear.x = 0.0
@@ -160,16 +154,25 @@ class ApriltagDrive(Node):
             pose = self.path[self.path_point_target_idx]
             self.direction_target = (pose.x, pose.y)
 
-        elif dist_to_future_target < dist_to_current_target:
-            self.path_point_idx = min(self.path_point_idx + 1, self.path_len - 1)
-            self.path_point_target_idx = min(self.path_point_target_idx + 1, self.path_len - 1)
-            self.get_logger().info(f"Point: {self.path_point_idx}/{self.path_len}")
+        else:
+            if self.path_point_idx + 1 < self.path_len:
+                # Compute distance to the upcomming point
+                future_pose = self.path[self.path_point_idx + 1]
+                future_target = np.array([future_pose.x, future_pose.y])
+                dist_to_future_target = np.linalg.norm(future_target - current_position)
 
-            pose = self.path[self.path_point_idx]
-            self.nav_target = (pose.x, pose.y)
+                # We can go progress to the next point if the distance of the upcomming
+                # point is smaller than the distance to the current navigation point
+                if dist_to_future_target < dist_to_current_target:
+                    self.path_point_idx = min(self.path_point_idx + 1, self.path_len - 1)
+                    self.path_point_target_idx = min(self.path_point_target_idx + 1, self.path_len - 1)
+                    self.get_logger().info(f"Point: {self.path_point_idx}/{self.path_len}")
 
-            pose = self.path[self.path_point_target_idx]
-            self.direction_target = (pose.x, pose.y)
+                    pose = self.path[self.path_point_idx]
+                    self.nav_target = (pose.x, pose.y)
+
+                    pose = self.path[self.path_point_target_idx]
+                    self.direction_target = (pose.x, pose.y)
 
 
         tx, ty = self.direction_target
@@ -207,15 +210,12 @@ class ApriltagDrive(Node):
         #     self.nav_target = None
         #     return
 
-        if abs(yaw_error) > 0.1:
-            twist.linear.x = 0.0
-        #     twist.angular.z = 0.35 if yaw_error > 0 else -0.35
+        if abs(yaw_error) > 0.25:
+            twist.linear.x = 0.01
         else:
             twist.linear.x = 0.25
-        #     twist.angular.z = 0.0
 
-        # twist.linear.x = 0.1
-        twist.angular.z = 0.5 * yaw_error
+        twist.angular.z = 0.8 * yaw_error
 
         self.cmd_pub.publish(twist)
 

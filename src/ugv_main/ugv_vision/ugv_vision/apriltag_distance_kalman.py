@@ -173,11 +173,13 @@ class ApriltagDistance(Node):
             residual_z=None,
         )
 
-        self.ukf.x = np.array([0., 0., 0.]) # initial state
-        self.ukf.P *= 0.2 # initial uncertainty
-        self.ukf.Q = np.diag([0.01, 0.01, 0.001])**2
+        # Initial state. Opposite penalty marker
+        self.ukf.x = np.array([0., -3.250, 0.]) # initial state
+        self.ukf.P *= 0.01 # initial uncertainty
 
-        self.apriltag_position_measurement_std = 0.1
+        self.ukf.Q = np.diag([0.1, 0.1, 0.01])**2
+
+        self.apriltag_position_measurement_std = 0.5
         self.apriltag_orientation_measurement_std = 0.1
 
 
