@@ -64,11 +64,9 @@ class PathPlanning(Node):
         self.plan_path()
 
     def plan_path(self):
-        self.get_logger().info(f"Planning path from {self.start} to {self.goal} (grid)")
-        print(self.grid.shape, self.start, self.goal)
+        self.get_logger().info(f"Planning path from {self.start} to {self.goal} (grid {self.grid.shape})")
         planning_model = Astar(self.grid, self.start, self.goal)
         path = planning_model.find_path()
-        print(path)
 
         if path is None:
             self.get_logger().warning("Failed to find a path")
