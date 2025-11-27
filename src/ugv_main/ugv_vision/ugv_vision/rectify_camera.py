@@ -6,7 +6,7 @@ import yaml
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage, Image
+from sensor_msgs.msg import CompressedImage, Image, CameraInfo
 
 
 def resolve_ros_path(path_str: str) -> str:
@@ -68,6 +68,9 @@ class RectifyCamera(Node):
             # Set the distortion coefficients
             self.dist_coef = np.array(config["distortion_coefficients"]["data"])
 
+        self.camera_matrix_pub = self.create_publisher(CameraInfo, "/camera_matrix", 10)
+        self.create_timer(5, self.publish_camera_matrix)
+
         # Initialize the cvbridge for the cv-ros image conversion
         self.bridge = CvBridge()
 
@@ -84,6 +87,10 @@ class RectifyCamera(Node):
         )
 
         self.get_logger().info("Started rectify camera node")
+
+    def publish_camera_matrix(self):
+        self.camera_matrix_pub.publish(CameraInfo(k=self.camera_matrix.flatten()))
+
 
     def image_callback(self, image_msg: Image):
         # Count the number of subscribers so we can determine later if we should publish

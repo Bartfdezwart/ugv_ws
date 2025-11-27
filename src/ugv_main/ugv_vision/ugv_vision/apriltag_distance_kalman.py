@@ -93,7 +93,7 @@ class ApriltagDistance(Node):
 
             return np.array([px_new, py_new, theta_new])
 
-        points = MerweScaledSigmaPoints(3, alpha=0.1, beta=2.0, kappa=-1)
+        points = MerweScaledSigmaPoints(3, alpha=0.1, beta=2.0, kappa=0.0)
 
         def x_mean_fn(sigmas, Wm):
             x = np.dot(Wm, sigmas[:, 0])
