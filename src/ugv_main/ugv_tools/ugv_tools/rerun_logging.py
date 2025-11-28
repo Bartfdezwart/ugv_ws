@@ -10,8 +10,11 @@ from cv_bridge import CvBridge
 from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage, Image, JointState, LaserScan
+from std_msgs.msg import Header, Int8MultiArray, MultiArrayLayout, MultiArrayDimension
+
 from ugv_interface.msg import AprilTagArray, LineArray
 from nav_2d_msgs.msg import Path2D
+from ament_index_python.packages import get_package_share_directory
 
 from ugv_tools.urdf_loader import URDFLogger, origin_to_transform
 
@@ -19,11 +22,18 @@ IMAGE_DETECTION_SIZE = np.array([1280, 960]) * 2
 IMAGE_STREAM_SIZE = np.array([640, 480])
 IMAGE_DETECTION_TO_STREAM_SCALE = IMAGE_DETECTION_SIZE / IMAGE_STREAM_SIZE
 
-# The root is the ugv_ws/
-WS_ROOT = Path(__file__).parents[6]
-if WS_ROOT.parts[-1] != "ugv_ws":
-    raise NotImplementedError
+from pathlib import Path
 
+SCRIPT_PATH = Path(__file__).resolve()
+
+for parent in SCRIPT_PATH.parents:
+    if parent.name == "ugv_ws":
+        WS_ROOT = parent
+        break
+else:
+    raise RuntimeError(f"Could not find workspace root starting from {SCRIPT_PATH}")
+
+print(f"Workspace root detected as: {WS_ROOT}")
 
 class RerunLogging(Node):
     def __init__(self):
@@ -107,13 +117,22 @@ class RerunLogging(Node):
         )
 
         # Lidar logging
-        self.lidar_sub = self.create_subscription(
-            LaserScan, "/scan", self.log_lidar, 10
+        # self.lidar_sub = self.create_subscription(
+        #     LaserScan, "/scan", self.log_lidar, 10
+        # )
+        
+        self.robot_detection_sub = self.create_subscription(
+            PoseArray, "/robot_detection", self.log_lidar, 10
         )
 
         # Path logging
         self.path_sub = self.create_subscription(
             Path2D, "/path", self.log_path, 10
+        )
+
+        # Grid logging
+        self.grid_sub = self.create_subscription(
+            Int8MultiArray, "/planning_grid", self.log_planning_grid, 10
         )
 
         self.bridge = CvBridge()
@@ -406,28 +425,57 @@ class RerunLogging(Node):
             ),
         )
 
-    def log_lidar(self, laser_scan: LaserScan):
-        stamp = laser_scan.header.stamp
+    # def log_lidar(self, laser_scan: LaserScan):
+    #     stamp = laser_scan.header.stamp
+    #     rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+    #     range_min = laser_scan.range_min
+    #     range_max = laser_scan.range_max
+
+    #     points = [
+    #         (scan_range, idx * laser_scan.angle_increment)
+    #         for idx, scan_range in enumerate(laser_scan.ranges)
+    #         if scan_range < range_max and scan_range > range_min
+    #     ]
+
+    #     points_xy = map(
+    #         lambda polar_point: (
+    #             polar_point[0] * np.cos(polar_point[1]),
+    #             polar_point[0] * np.sin(polar_point[1]),
+    #             0.0,
+    #         ),
+    #         points,
+    #     )
+    #     rr.log("/world/rover/base_footprint/base_link/base_lidar_link/lidar", rr.Points3D(list(points_xy)))
+
+
+    def log_lidar(self, pose_array: PoseArray):
+
+        stamp = pose_array.header.stamp
         rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
 
-        range_min = laser_scan.range_min
-        range_max = laser_scan.range_max
+        # convert to centimeters if needed for visibility
+        pts = [(p.position.x, p.position.y, 0.0) for p in pose_array.poses]
 
-        points = [
-            (scan_range, idx * laser_scan.angle_increment)
-            for idx, scan_range in enumerate(laser_scan.ranges)
-            if scan_range < range_max and scan_range > range_min
-        ]
-
-        points_xy = map(
-            lambda polar_point: (
-                polar_point[0] * np.cos(polar_point[1]),
-                polar_point[0] * np.sin(polar_point[1]),
-                0.0,
-            ),
-            points,
+        rr.log(
+            "/world/rover/base_footprint/base_link/base_lidar_link/lidar",
+            rr.Points3D(pts)
         )
-        rr.log("/world/rover/base_footprint/base_link/base_lidar_link/lidar", rr.Points3D(list(points_xy)))
+
+
+    def log_planning_grid(self, msg: Int8MultiArray):
+        h = msg.layout.dim[0].size
+        w = msg.layout.dim[1].size
+        data = np.array(msg.data, dtype=np.int8).reshape((h, w))
+
+        img = (data * 255).astype(np.uint8)
+
+        rr.set_time_nanos("ros_time", self.get_clock().now().nanoseconds)
+        rr.log(
+            "world/path_planning/grid",
+            rr.Image(img),
+        )
+
 
     def log_path(self, path: Path2D):
         stamp = path.header.stamp

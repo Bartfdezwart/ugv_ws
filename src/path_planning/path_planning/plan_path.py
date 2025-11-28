@@ -2,9 +2,9 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from path_planning.astar import Astar
-from std_msgs.msg import Header
-from geometry_msgs.msg import Pose2D, PoseStamped, PointStamped
-from nav_2d_msgs.msg import Path2D, Pose2DStamped
+from std_msgs.msg import Header, Int8MultiArray, MultiArrayLayout, MultiArrayDimension
+from geometry_msgs.msg import Pose2D, PoseStamped, PointStamped, PoseArray
+from nav_2d_msgs.msg import Path2D
 
 
 class PathPlanning(Node):
@@ -18,7 +18,7 @@ class PathPlanning(Node):
         self.goal = None
 
         self.robot_detect_sub = self.create_subscription(
-            Pose2DStamped, "/robot_detection", self.robot_detection_callback, 10
+            PoseArray, "/robot_detection", self.robot_detection_callback, 10
         )
         self.target_point_sub = self.create_subscription(
             PointStamped, "target_point", self.target_point_callback, 10
@@ -29,42 +29,79 @@ class PathPlanning(Node):
         )
 
         self.path_pub = self.create_publisher(Path2D, "/path", 10)
+        self.grid_pub = self.create_publisher(Int8MultiArray, "/planning_grid", 10)
 
     def robot_pose_callback(self, pose: PoseStamped):
         position = pose.pose.position
 
         position = np.array([position.x, position.y])
-        # shift position
         position += np.array([3.0, 4.5])
-        # Meter to centimeter conversion
         position *= 100
-        # downscale to grid size
         position /= self.scale
-        self.start = (int(position[0]), int(position[1]))
+
+        # swap to (row, col) = (y, x), (not tested yet)
+        self.start = (int(position[1]), int(position[0]))
 
     def target_point_callback(self, stamped_point: PointStamped):
         point = stamped_point.point
 
         point = np.array([point.x, point.y])
-        # shift position
         point += np.array([3.0, 4.5])
-        # Meter to centimeter conversion
         point *= 100
-        # downscale to grid size
         point /= self.scale
 
-        # Update goal point
-        self.goal = (int(point[0]), int(point[1]))
-        # Recompute path
+        # swap to (row, col) = (y, x)
+        self.goal = (int(point[1]), int(point[0]))
         self.plan_path()
 
-    def robot_detection_callback(self, pose: Pose2DStamped) -> None:
-        # Update grid
+    def publish_grid(self):
+        msg = Int8MultiArray()
 
+        msg.layout = MultiArrayLayout(
+            dim=[
+                MultiArrayDimension(label="height", size=self.grid.shape[0], stride=self.grid.size),
+                MultiArrayDimension(label="width", size=self.grid.shape[1], stride=self.grid.shape[1]),
+            ],
+            data_offset=0
+        )
+
+        msg.data = self.grid.astype(np.int8).flatten().tolist()
+        self.grid_pub.publish(msg)
+
+
+    def robot_detection_callback(self, pose_array: PoseArray):
+        self.grid.fill(0)
+
+        inflation = 6
+
+        for pose in pose_array.poses:
+            x_field = pose.position.x
+            y_field = pose.position.y
+
+            # convert field coords → grid (col = x, row = y)
+            col = int(((x_field + 3.0) * 100) / self.scale)
+            row = int(((y_field + 4.5) * 100) / self.scale)
+
+            for dx in range(-inflation, inflation + 1):
+                for dy in range(-inflation, inflation + 1):
+                    ix = col + dx  # column index (x)
+                    iy = row + dy  # row index (y)
+
+                    # bounds: grid[row, col]
+                    if 0 <= iy < self.grid.shape[0] and 0 <= ix < self.grid.shape[1]:
+                        self.grid[iy, ix] = 1
+
+        self.publish_grid()
         self.plan_path()
 
     def plan_path(self):
-        self.get_logger().info(f"Planning path from {self.start} to {self.goal} (grid {self.grid.shape})")
+        if self.start is None or self.goal is None:
+            return
+
+        self.get_logger().info(
+            f"Planning path from {self.start} to {self.goal} (grid {self.grid.shape})"
+        )
+
         planning_model = Astar(self.grid, self.start, self.goal)
         path = planning_model.find_path()
 
@@ -72,11 +109,16 @@ class PathPlanning(Node):
             self.get_logger().warning("Failed to find a path")
             return
 
-        # Publish the path
         header = Header(stamp=self.get_clock().now().to_msg())
-        path_points = [
-            Pose2D(x=float(point[0] / 100 * self.scale) - 3.0, y=float(point[1] / 100 * self.scale) - 4.5) for point in path
-        ]
+
+        # path is [(row, col)]
+        path_points = []
+        for row, col in path:
+            x_field = (col * self.scale / 100.0) - 3.0
+            y_field = (row * self.scale / 100.0) - 4.5
+            path_points.append(Pose2D(x=x_field, y=y_field))
+
+        self.publish_grid()
         self.path_pub.publish(Path2D(header=header, poses=path_points))
 
 

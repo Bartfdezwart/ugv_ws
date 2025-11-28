@@ -12,9 +12,9 @@ from geometry_msgs.msg import PoseStamped
 import builtin_interfaces.msg
 from scipy.spatial.transform import Rotation
 
-IMAGE_DETECTION_SIZE = np.array([1280, 960]) * 2
+IMAGE_DETECTION_SIZE = np.array([1280, 960])
 IMAGE_STREAM_SIZE = np.array([640, 480])
-IMAGE_DETECTION_TO_STREAM_SCALE = IMAGE_DETECTION_SIZE / IMAGE_STREAM_SIZE
+IMAGE_DETECTION_TO_STREAM_SCALE = IMAGE_STREAM_SIZE / (IMAGE_DETECTION_SIZE * 2)
 
 class ApriltagVisualize(Node):
     def __init__(self):

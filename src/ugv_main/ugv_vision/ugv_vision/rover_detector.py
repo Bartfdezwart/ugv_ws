@@ -1,13 +1,11 @@
 import argparse
-
 import cv2
 import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage, Image, CameraInfo, LaserScan
-from nav_2d_msgs.msg import Path2D, Pose2DStamped
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 from scipy.spatial.transform import Rotation
 
 
@@ -16,8 +14,8 @@ class RoverDetect(Node):
         super().__init__('rover_detector')
 
         self.lidar_sub = self.create_subscription(LaserScan, "/scan", self.rover_detector, 10)
-        self.lidar_pub = self.create_publisher(Pose2DStamped, "/robot_detection", 10)
-        self.position_sub = self.create_subscription(PoseStamped,"/rover_pose", self.pose_callback,10)
+        self.lidar_pub = self.create_publisher(PoseArray, "/robot_detection", 10)
+        self.position_sub = self.create_subscription(PoseStamped, "/rover_pose", self.pose_callback, 10)
 
         self.rover_x = 0.0
         self.rover_y = 0.0
@@ -28,82 +26,49 @@ class RoverDetect(Node):
         self.rover_x = msg.pose.position.x
         self.rover_y = msg.pose.position.y
 
-        quat = msg.pose.orientation
-        _, _, self.rover_yaw = Rotation.from_quat(quat).as_euler(seq='xyz')
+        q = msg.pose.orientation
+        quat = [q.x, q.y, q.z, q.w]
+        self.rover_yaw = Rotation.from_quat(quat).as_euler('xyz')[2]
 
 
     def rover_detector(self, laser_scan: LaserScan):
         range_min = laser_scan.range_min
         range_max = laser_scan.range_max
 
-        points = []
-        for idx, r in enumerate(laser_scan.ranges):
-            if not (range_min < r < range_max):
-                continue
+        pose_array = PoseArray()
+        pose_array.header.stamp = laser_scan.header.stamp
+        pose_array.header.frame_id = "map"  # field frame
 
-            angle = idx * laser_scan.angle_increment + laser_scan.angle_min
-            angle_world = angle + np.pi / 2
-            bearing = angle_world - self.rover_yaw
-            bearing = np.arctan2(np.sin(bearing), np.cos(bearing))
+        points_xy = []
+        for idx, scan_range in enumerate(laser_scan.ranges):
+            if range_min < scan_range < range_max:
+                theta = laser_scan.angle_min + idx * laser_scan.angle_increment
 
-            # 120 degrees in front of rover
-            if not (-np.pi/3 <= bearing <= np.pi/3):
-                continue
+                # skip lidar points behind the rover (otherwise it detects the camera )
+                if not ((np.pi)-np.pi/1.2 <= theta <= (np.pi) + np.pi/1.2):
+                    continue
+                
+                # ignore points too close to the rover.
+                if scan_range < 0.15:
+                    continue
 
-            points.append((r, angle))
-
-        points_xy = [(r * np.cos(a), r * np.sin(a)) for r, a in points]
-
-        cos_y = np.cos(self.rover_yaw)
-        sin_y = np.sin(self.rover_yaw)
-
-        world_points = []
-        for px, py in points_xy:
-            world_x = self.rover_x + (-sin_y * px - cos_y * py)
-            world_y = self.rover_y + ( cos_y * px - sin_y * py)
-
-            # assume no points within 10 cm of the edges of the field
-            if -2.9 <= world_x <= 2.9 and -4.4 <= world_y <= 4.4:
-                world_points.append((world_x, world_y))
-
-        clusters = self.cluster_points(world_points, threshold=0.30)
-
-        for cluster in clusters:
-
-            # skip sparse clusters.
-            if(len(cluster) < 3):
-                continue
-
-            cx = float(np.mean([p[0] for p in cluster]))
-            cy = float(np.mean([p[1] for p in cluster]))
-
-            msg = Pose2DStamped()
-            msg.header.stamp = laser_scan.header.stamp
-            msg.pose.x = cx
-            msg.pose.y = cy
-            msg.pose.theta = 0.0
-            self.lidar_pub.publish(msg)
-
-            print(cx, cy)
+                x_lidar = scan_range * np.cos(theta)
+                y_lidar = scan_range * np.sin(theta)
 
 
+                if not (-3 <= x_lidar <= 3):
+                    continue
+                if not (-4.5 <= y_lidar <= 4.5):
+                    continue
 
-    def cluster_points(self, points, threshold=0.20):
-        clusters = []
+                pose = Pose()
+                pose.position.x = float(x_lidar)
+                pose.position.y = float(y_lidar)
+                pose.orientation.w = 1.0
 
-        for p in points:
-            added = False
+                pose_array.poses.append(pose)
 
-            for c in clusters:
-                if any(np.linalg.norm(np.array(p) - np.array(q)) < threshold for q in c):
-                    c.append(p)
-                    added = True
-                    break
-            
-            if not added:
-                clusters.append([p])
-        
-        return clusters
+        self.lidar_pub.publish(pose_array)
 
 
 def main(args=None):
@@ -116,64 +81,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-
-
-
-# import argparse
-
-# import cv2
-# import numpy as np
-# import rclpy
-# from cv_bridge import CvBridge
-# from rclpy.node import Node
-# from sensor_msgs.msg import CompressedImage, Image, CameraInfo, LaserScan
-# from ugv_interface.msg import AprilTag, AprilTagArray, Point
-# from nav_2d_msgs.msg import Path2D, Pose2DStamped
-# from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
-
-
-# class RoverDetect(Node):
-#     def __init__(self):
-#         super().__init__('rover_detector')
-#         self.lidar_sub = self.create_subscription(LaserScan, "/scan", self.rover_detector, 10)
-#         self.lidar_pub = self.create_publisher(Pose2DStamped, "/robot_detection", self.rover_detector, 10)
-#         self.position_pub = self.create_subscription(PoseStamped, '/rover_pose', 10)
-
-
-#     def rover_detector(self, laser_scan: LaserScan):
-#         stamp = laser_scan.header.stamp
-
-#         range_min = laser_scan.range_min
-#         range_max = laser_scan.range_max
-
-#         points = [
-#             (scan_range, idx * laser_scan.angle_increment)
-#             for idx, scan_range in enumerate(laser_scan.ranges)
-#             if scan_range < range_max and scan_range > range_min
-#         ]
-
-#         points_xy = map(
-#             lambda polar_point: (
-#                 polar_point[0] * np.cos(polar_point[1]),
-#                 polar_point[0] * np.sin(polar_point[1]),
-#                 0.0,
-#             ),
-#             points,
-#         )
-
-        
-
-# def main(args=None):
-#     parser = argparse.ArgumentParser()
-#     rclpy.init(args=args)
-#     apriltag_ctrl = RoverDetect()
-#     rclpy.spin(apriltag_ctrl)
-#     apriltag_ctrl.destroy_node()
-#     rclpy.shutdown()
-
-# if __name__ == '__main__':
-#     main()
-
-
-
+    
