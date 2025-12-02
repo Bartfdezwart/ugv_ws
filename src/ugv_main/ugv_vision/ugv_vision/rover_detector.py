@@ -45,6 +45,7 @@ class RoverDetect(Node):
 
         cos_yaw = math.cos(self.rover_yaw)
         sin_yaw = math.sin(self.rover_yaw)
+        print(self.rover_yaw)
 
         for idx, scan_range in enumerate(laser_scan.ranges):
 
@@ -57,10 +58,10 @@ class RoverDetect(Node):
                 continue
 
 
-            x_lidar = scan_range * math.cos(theta + self.rover_yaw)
-            y_lidar = scan_range * math.sin(theta + self.rover_yaw)
+            x_lidar = scan_range * math.cos(theta + self.rover_yaw + np.pi)
+            y_lidar = scan_range * math.sin(theta + self.rover_yaw + np.pi)
 
-    
+
             x_world = self.rover_x + x_lidar
             y_world = self.rover_y + y_lidar
 
