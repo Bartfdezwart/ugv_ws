@@ -2,7 +2,7 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from path_planning.astar import Astar
-from std_msgs.msg import Header, Int8MultiArray, MultiArrayLayout, MultiArrayDimension
+from std_msgs.msg import Header
 from geometry_msgs.msg import Pose2D, PoseStamped, PointStamped, PoseArray, Pose, Point
 from nav_2d_msgs.msg import Path2D
 
@@ -54,18 +54,6 @@ class PathPlanning(Node):
 
     def publish_grid(self):
         msg = PoseArray(header=Header(stamp=self.get_clock().now().to_msg()))
-
-        # msg.layout = MultiArrayLayout(
-        #     dim=[
-        #         MultiArrayDimension(
-        #             label="height", size=self.grid.shape[0], stride=self.grid.size
-        #         ),
-        #         MultiArrayDimension(
-        #             label="width", size=self.grid.shape[1], stride=self.grid.shape[1]
-        #         ),
-        #     ],
-        #     data_offset=0,
-        # )
 
         wall_coords = np.argwhere(self.grid == 1)
 
@@ -127,7 +115,6 @@ class PathPlanning(Node):
             for point in path
         ]
 
-        self.publish_grid()
         self.path_pub.publish(Path2D(header=header, poses=path_points))
 
 
