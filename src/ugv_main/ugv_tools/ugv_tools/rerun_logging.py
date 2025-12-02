@@ -131,8 +131,8 @@ class RerunLogging(Node):
         )
 
         # Grid logging
-        self.grid_sub = self.create_subscription(
-            Int8MultiArray, "/planning_grid", self.log_planning_grid, 10
+        self.grid_walls_sub = self.create_subscription(
+            PoseArray, "/grid_walls", self.log_planning_grid, 10
         )
 
         self.bridge = CvBridge()
@@ -463,17 +463,27 @@ class RerunLogging(Node):
         )
 
 
-    def log_planning_grid(self, msg: Int8MultiArray):
-        h = msg.layout.dim[0].size
-        w = msg.layout.dim[1].size
-        data = np.array(msg.data, dtype=np.int8).reshape((h, w))
+    def log_planning_grid(self, pose_array: PoseArray):
+        stamp = pose_array.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
 
-        img = (data * 255).astype(np.uint8)
+        poses = pose_array.poses
+        wall_height = 0.1
+        wall_width = 0.04
+        centers = [(pose.position.y, -pose.position.x, wall_height) for pose in poses]
+        box_half_size = [wall_width / 2, wall_width / 2, wall_height / 2]
+        box_color = (0.0, 0.0, 0.0)
+        box_radii = 0.005
 
-        rr.set_time_nanos("ros_time", self.get_clock().now().nanoseconds)
         rr.log(
             "world/path_planning/grid",
-            rr.Image(img),
+            rr.Boxes3D(
+                centers=centers,
+                half_sizes=box_half_size * len(centers),
+                colors=[box_color] * len(centers),
+                radii=[box_radii] * len(centers),
+                fill_mode=rr.components.FillMode.MajorWireframe
+            ),
         )
 
 

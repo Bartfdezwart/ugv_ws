@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 from path_planning.astar import Astar
 from std_msgs.msg import Header, Int8MultiArray, MultiArrayLayout, MultiArrayDimension
-from geometry_msgs.msg import Pose2D, PoseStamped, PointStamped, PoseArray
+from geometry_msgs.msg import Pose2D, PoseStamped, PointStamped, PoseArray, Pose, Point
 from nav_2d_msgs.msg import Path2D
 
 
@@ -29,7 +29,7 @@ class PathPlanning(Node):
         )
 
         self.path_pub = self.create_publisher(Path2D, "/path", 10)
-        self.grid_pub = self.create_publisher(Int8MultiArray, "/planning_grid", 10)
+        self.grid_walls_pub = self.create_publisher(PoseArray, "/grid_walls", 10)
 
     def robot_pose_callback(self, pose: PoseStamped):
         position = pose.pose.position
@@ -53,22 +53,29 @@ class PathPlanning(Node):
         self.plan_path()
 
     def publish_grid(self):
-        msg = Int8MultiArray()
+        msg = PoseArray(header=Header(stamp=self.get_clock().now().to_msg()))
 
-        msg.layout = MultiArrayLayout(
-            dim=[
-                MultiArrayDimension(
-                    label="height", size=self.grid.shape[0], stride=self.grid.size
-                ),
-                MultiArrayDimension(
-                    label="width", size=self.grid.shape[1], stride=self.grid.shape[1]
-                ),
-            ],
-            data_offset=0,
-        )
+        # msg.layout = MultiArrayLayout(
+        #     dim=[
+        #         MultiArrayDimension(
+        #             label="height", size=self.grid.shape[0], stride=self.grid.size
+        #         ),
+        #         MultiArrayDimension(
+        #             label="width", size=self.grid.shape[1], stride=self.grid.shape[1]
+        #         ),
+        #     ],
+        #     data_offset=0,
+        # )
 
-        msg.data = self.grid.astype(np.int8).flatten().tolist()
-        self.grid_pub.publish(msg)
+        wall_coords = np.argwhere(self.grid == 1)
+
+        if wall_coords.size > 0:
+            wall_coords = wall_coords.astype(float) / 100
+            wall_coords *= self.scale
+            wall_coords -= np.array([3.0, 4.5])
+
+            msg.poses = [Pose(position=Point(x=coord[0], y=coord[1])) for coord in wall_coords]
+        self.grid_walls_pub.publish(msg)
 
     def robot_detection_callback(self, pose_array: PoseArray):
         self.grid.fill(0)
@@ -89,8 +96,8 @@ class PathPlanning(Node):
                     iy = row + dy  # row index (y)
 
                     # bounds: grid[row, col]
-                    if 0 <= iy < self.grid.shape[0] and 0 <= ix < self.grid.shape[1]:
-                        self.grid[iy, ix] = 1
+                    if 0 <= ix < self.grid.shape[0] and 0 <= iy < self.grid.shape[1]:
+                        self.grid[ix, iy] = 1
 
         self.publish_grid()
         self.plan_path()
