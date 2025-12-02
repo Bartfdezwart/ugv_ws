@@ -109,10 +109,9 @@ class ApriltagDrive(Node):
         current_target = np.array([pose.x, pose.y])
         dist_to_current_target = np.linalg.norm(current_target - current_position)
 
-        # if (self.path_len - self.path_point_idx) < self.look_ahead_offset:
         goal = self.path[-1]
         distance_to_goal = np.linalg.norm(np.array([goal.x, goal.y]) - current_position)
-        print("Distance:", distance_to_goal)
+
         if distance_to_goal < 0.2:
             twist = Twist()
             twist.linear.x = 0.0
@@ -125,7 +124,7 @@ class ApriltagDrive(Node):
         if dist_to_current_target < 0.05:
             self.path_point_idx = min(self.path_point_idx + 1, self.path_len - 1)
             self.path_point_target_idx = min(self.path_point_target_idx + 1, self.path_len - 1)
-            self.get_logger().info(f"Point: {self.path_point_idx}/{self.path_len}")
+            self.get_logger().info(f"Point: {self.path_point_idx}/{self.path_len}, Dist: {distance_to_goal:.2f}")
 
             # If robot reached the final path point stop driving
             if self.path_point_idx == self.path_len:
@@ -156,7 +155,7 @@ class ApriltagDrive(Node):
                 if dist_to_future_target < dist_to_current_target:
                     self.path_point_idx = min(self.path_point_idx + 1, self.path_len - 1)
                     self.path_point_target_idx = min(self.path_point_target_idx + 1, self.path_len - 1)
-                    self.get_logger().info(f"Point: {self.path_point_idx}/{self.path_len}")
+                    self.get_logger().info(f"Point: {self.path_point_idx}/{self.path_len}, Dist: {distance_to_goal:.2f}")
 
                     pose = self.path[self.path_point_idx]
                     self.nav_target = (pose.x, pose.y)
