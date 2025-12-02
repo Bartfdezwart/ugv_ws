@@ -91,24 +91,13 @@ class ApriltagDrive(Node):
     def path_callback(self, path: Path2D):
         self.path = path.poses
         self.path_point_idx = 0
-        self.path_point_target_idx = self.path_point_idx + self.look_ahead_offset
         self.path_len = len(self.path)
         pose = self.path[self.path_point_idx]
         self.nav_target = (pose.x, pose.y)
 
+        self.path_point_target_idx = min(self.path_len -1, self.path_point_idx + self.look_ahead_offset)
         pose = self.path[self.path_point_target_idx]
         self.direction_target = (pose.x, pose.y)
-
-    # def predict_yaw(self):
-    #     """Predict yaw when no new detection arrives."""
-    #     if self.current_yaw_deg is None or self.last_yaw_time is None:
-    #         return None
-
-    #     now = time.time()
-    #     dt = now - self.last_yaw_time
-
-    #     predicted = (self.current_yaw_deg + self.yaw_rate * dt) % 360
-    #     return predicted
 
     def control_loop(self):
         if self.nav_target is None or self.current_x is None:
@@ -120,17 +109,18 @@ class ApriltagDrive(Node):
         current_target = np.array([pose.x, pose.y])
         dist_to_current_target = np.linalg.norm(current_target - current_position)
 
-        if (self.path_len - self.path_point_idx) < self.look_ahead_offset:
-            goal = self.path[-1]
-            distance_to_goal = np.linalg.norm(np.array([goal.x, goal.y]))
-            if distance_to_goal < 0.2:
-                twist = Twist()
-                twist.linear.x = 0.0
-                twist.angular.z = 0.0
-                self.cmd_pub.publish(twist)
-                self.get_logger().info("Reached target.")
-                self.nav_target = None
-                return
+        # if (self.path_len - self.path_point_idx) < self.look_ahead_offset:
+        goal = self.path[-1]
+        distance_to_goal = np.linalg.norm(np.array([goal.x, goal.y]) - current_position)
+        print("Distance:", distance_to_goal)
+        if distance_to_goal < 0.2:
+            twist = Twist()
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
+            self.cmd_pub.publish(twist)
+            self.get_logger().info("Reached target.")
+            self.nav_target = None
+            return
 
         if dist_to_current_target < 0.05:
             self.path_point_idx = min(self.path_point_idx + 1, self.path_len - 1)
