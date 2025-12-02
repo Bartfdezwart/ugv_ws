@@ -39,8 +39,7 @@ class PathPlanning(Node):
         position *= 100
         position /= self.scale
 
-        # swap to (row, col) = (y, x), (not tested yet)
-        self.start = (int(position[1]), int(position[0]))
+        self.start = (int(position[0]), int(position[1]))
 
     def target_point_callback(self, stamped_point: PointStamped):
         point = stamped_point.point
@@ -50,8 +49,7 @@ class PathPlanning(Node):
         point *= 100
         point /= self.scale
 
-        # swap to (row, col) = (y, x)
-        self.goal = (int(point[1]), int(point[0]))
+        self.goal = (int(point[0]), int(point[1]))
         self.plan_path()
 
     def publish_grid(self):
@@ -59,15 +57,18 @@ class PathPlanning(Node):
 
         msg.layout = MultiArrayLayout(
             dim=[
-                MultiArrayDimension(label="height", size=self.grid.shape[0], stride=self.grid.size),
-                MultiArrayDimension(label="width", size=self.grid.shape[1], stride=self.grid.shape[1]),
+                MultiArrayDimension(
+                    label="height", size=self.grid.shape[0], stride=self.grid.size
+                ),
+                MultiArrayDimension(
+                    label="width", size=self.grid.shape[1], stride=self.grid.shape[1]
+                ),
             ],
-            data_offset=0
+            data_offset=0,
         )
 
         msg.data = self.grid.astype(np.int8).flatten().tolist()
         self.grid_pub.publish(msg)
-
 
     def robot_detection_callback(self, pose_array: PoseArray):
         self.grid.fill(0)
@@ -111,12 +112,13 @@ class PathPlanning(Node):
 
         header = Header(stamp=self.get_clock().now().to_msg())
 
-        # path is [(row, col)]
-        path_points = []
-        for row, col in path:
-            x_field = (col * self.scale / 100.0) - 3.0
-            y_field = (row * self.scale / 100.0) - 4.5
-            path_points.append(Pose2D(x=x_field, y=y_field))
+        path_points = [
+            Pose2D(
+                x=float(point[0] / 100 * self.scale) - 3.0,
+                y=float(point[1] / 100 * self.scale) - 4.5,
+            )
+            for point in path
+        ]
 
         self.publish_grid()
         self.path_pub.publish(Path2D(header=header, poses=path_points))
