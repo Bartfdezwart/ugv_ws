@@ -1,10 +1,7 @@
-import argparse
-import cv2
 import numpy as np
 import rclpy
-from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage, Image, CameraInfo, LaserScan
+from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 from scipy.spatial.transform import Rotation
 import math
@@ -43,9 +40,6 @@ class RoverDetect(Node):
         pose_array.header.stamp = laser_scan.header.stamp
         pose_array.header.frame_id = "map"
 
-        cos_yaw = math.cos(self.rover_yaw)
-        sin_yaw = math.sin(self.rover_yaw)
-
         for idx, scan_range in enumerate(laser_scan.ranges):
 
             if not (range_min < scan_range < range_max):
@@ -53,7 +47,7 @@ class RoverDetect(Node):
 
             theta = laser_scan.angle_min + idx * laser_scan.angle_increment
 
-            if scan_range < 0.15:
+            if scan_range < 0.05:
                 continue
 
 
