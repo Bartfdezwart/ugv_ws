@@ -117,12 +117,12 @@ class RerunLogging(Node):
         )
 
         # Lidar logging
-        # self.lidar_sub = self.create_subscription(
-        #     LaserScan, "/scan", self.log_lidar, 10
-        # )
-        
+        self.lidar_sub = self.create_subscription(
+            LaserScan, "/scan", self.log_lidar, 10
+        )
+
         self.robot_detection_sub = self.create_subscription(
-            PoseArray, "/robot_detection", self.log_lidar, 10
+            PoseArray, "/robot_detection", self.log_robot_detection, 10
         )
 
         # Path logging
@@ -425,40 +425,40 @@ class RerunLogging(Node):
             ),
         )
 
-    # def log_lidar(self, laser_scan: LaserScan):
-    #     stamp = laser_scan.header.stamp
-    #     rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+    def log_lidar(self, laser_scan: LaserScan):
+        stamp = laser_scan.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
 
-    #     range_min = laser_scan.range_min
-    #     range_max = laser_scan.range_max
+        range_min = laser_scan.range_min
+        range_max = laser_scan.range_max
 
-    #     points = [
-    #         (scan_range, idx * laser_scan.angle_increment)
-    #         for idx, scan_range in enumerate(laser_scan.ranges)
-    #         if scan_range < range_max and scan_range > range_min
-    #     ]
+        points = [
+            (scan_range, idx * laser_scan.angle_increment)
+            for idx, scan_range in enumerate(laser_scan.ranges)
+            if scan_range < range_max and scan_range > range_min
+        ]
 
-    #     points_xy = map(
-    #         lambda polar_point: (
-    #             polar_point[0] * np.cos(polar_point[1]),
-    #             polar_point[0] * np.sin(polar_point[1]),
-    #             0.0,
-    #         ),
-    #         points,
-    #     )
-    #     rr.log("/world/rover/base_footprint/base_link/base_lidar_link/lidar", rr.Points3D(list(points_xy)))
+        points_xy = map(
+            lambda polar_point: (
+                polar_point[0] * np.cos(polar_point[1]),
+                polar_point[0] * np.sin(polar_point[1]),
+                0.0,
+            ),
+            points,
+        )
+        rr.log("/world/rover/base_footprint/base_link/base_lidar_link/lidar", rr.Points3D(list(points_xy)))
 
 
-    def log_lidar(self, pose_array: PoseArray):
+    def log_robot_detection(self, pose_array: PoseArray):
 
         stamp = pose_array.header.stamp
         rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
 
         # convert to centimeters if needed for visibility
-        pts = [(p.position.x, p.position.y, 0.0) for p in pose_array.poses]
+        pts = [(p.position.y, -p.position.x, 0.1) for p in pose_array.poses]
 
         rr.log(
-            "/world/rover/base_footprint/base_link/base_lidar_link/lidar",
+            "/world/object_detection",
             rr.Points3D(pts)
         )
 
