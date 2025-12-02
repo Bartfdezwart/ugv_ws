@@ -35,11 +35,12 @@ class ApriltagDrive(Node):
 
         self.last_yaw_time = None
 
-        self.yaw_history = []
-        self.time_history = []
+        # self.yaw_history = []
+        # self.time_history = []
         self.yaw_rate = 0.0
 
         self.nav_target = None
+        self.target_reached = True
         self.timer = self.create_timer(0.05, self.control_loop)
 
         thread = threading.Thread(target=self.input_thread, daemon=True)
@@ -50,13 +51,13 @@ class ApriltagDrive(Node):
             try:
                 text = input("Enter coordinate (x y): ")
                 x, y = map(float, text.split())
-                # self.nav_target = (x, y)
                 self.target_point_pub.publish(
                     PointStamped(
                         point=Point(x=x, y=y),
                         header=Header(stamp=self.get_clock().now().to_msg()),
                     )
                 )
+                self.target_reached = False
                 print(f"Target set: {x:.2f}, {y:.2f}")
             except:
                 print("Invalid input.")
@@ -75,18 +76,18 @@ class ApriltagDrive(Node):
         now = time.time()
         self.last_yaw_time = now
 
-        self.yaw_history.append(self.current_yaw_deg)
-        self.time_history.append(now)
+        # self.yaw_history.append(self.current_yaw_deg)
+        # self.time_history.append(now)
 
-        if len(self.yaw_history) > 10:
-            self.yaw_history.pop(0)
-            self.time_history.pop(0)
+        # if len(self.yaw_history) > 10:
+        #     self.yaw_history.pop(0)
+        #     self.time_history.pop(0)
 
-        if len(self.yaw_history) >= 2:
-            d = self.normalize_angle(self.yaw_history[-1] - self.yaw_history[-2])
-            dt = self.time_history[-1] - self.time_history[-2]
-            if dt > 0:
-                self.yaw_rate = d / dt
+        # if len(self.yaw_history) >= 2:
+        #     d = self.normalize_angle(self.yaw_history[-1] - self.yaw_history[-2])
+        #     dt = self.time_history[-1] - self.time_history[-2]
+        #     if dt > 0:
+        #         self.yaw_rate = d / dt
 
     def path_callback(self, path: Path2D):
         self.path = path.poses
@@ -100,6 +101,9 @@ class ApriltagDrive(Node):
         self.direction_target = (pose.x, pose.y)
 
     def control_loop(self):
+        if self.target_reached:
+            return
+
         if self.nav_target is None or self.current_x is None:
             return
 
@@ -117,8 +121,9 @@ class ApriltagDrive(Node):
             twist.linear.x = 0.0
             twist.angular.z = 0.0
             self.cmd_pub.publish(twist)
-            self.get_logger().info("Reached target.")
+            self.get_logger().info(f"Reached target. Dist: {distance_to_goal:.2f}")
             self.nav_target = None
+            self.target_reached = True
             return
 
         if dist_to_current_target < 0.05:
@@ -132,8 +137,9 @@ class ApriltagDrive(Node):
                 twist.linear.x = 0.0
                 twist.angular.z = 0.0
                 self.cmd_pub.publish(twist)
-                self.get_logger().info("Reached target.")
+                self.get_logger().info("Reached target. Dist: {distance_to_goal:.2f}")
                 self.nav_target = None
+                self.target_reached = True
                 return
 
             # If robot reached current target set navigation to next one
