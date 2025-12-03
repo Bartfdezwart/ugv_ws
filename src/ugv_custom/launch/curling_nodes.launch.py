@@ -23,9 +23,14 @@ def generate_launch_description():
         executable="plan_path"
     )
 
+    rover_detector_node = Node(
+        package="ugv_vision",
+        executable="rover_detector"
+    )
+
     return LaunchDescription([
         april_detector_node,
         april_distance_kalman_node,
         plan_path_node,
-        # april_drive_node,
+        rover_detector_node,
     ])
