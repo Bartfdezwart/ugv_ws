@@ -116,7 +116,7 @@ class ApriltagDrive(Node):
         goal = self.path[-1]
         distance_to_goal = np.linalg.norm(np.array([goal.x, goal.y]) - current_position)
 
-        if distance_to_goal < 0.2:
+        if distance_to_goal < 0.25:
             twist = Twist()
             twist.linear.x = 0.0
             twist.angular.z = 0.0
