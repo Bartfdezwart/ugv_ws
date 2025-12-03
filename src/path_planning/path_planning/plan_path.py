@@ -17,6 +17,10 @@ class PathPlanning(Node):
         self.start = None
         self.goal = None
 
+        self.grid_history = []
+        self.history_length = 5
+        self.occupancy_threshold = 2
+
         self.robot_detect_sub = self.create_subscription(
             PoseArray, "/robot_detection", self.robot_detection_callback, 10
         )
@@ -65,8 +69,10 @@ class PathPlanning(Node):
             msg.poses = [Pose(position=Point(x=coord[0], y=coord[1])) for coord in wall_coords]
         self.grid_walls_pub.publish(msg)
 
+
+
     def robot_detection_callback(self, pose_array: PoseArray):
-        self.grid.fill(0)
+        current_grid = np.zeros_like(self.grid)
 
         inflation = 6
 
@@ -74,21 +80,27 @@ class PathPlanning(Node):
             x_field = pose.position.x
             y_field = pose.position.y
 
-            # convert field coords → grid (col = x, row = y)
             col = int(((x_field + 3.0) * 100) / self.scale)
             row = int(((y_field + 4.5) * 100) / self.scale)
 
             for dx in range(-inflation, inflation + 1):
                 for dy in range(-inflation, inflation + 1):
-                    ix = col + dx  # column index (x)
-                    iy = row + dy  # row index (y)
+                    ix = col + dx
+                    iy = row + dy
 
-                    # bounds: grid[row, col]
-                    if 0 <= ix < self.grid.shape[0] and 0 <= iy < self.grid.shape[1]:
-                        self.grid[ix, iy] = 1
+                    if 0 <= ix < current_grid.shape[0] and 0 <= iy < current_grid.shape[1]:
+                        current_grid[ix, iy] = 1
+
+        self.grid_history.append(current_grid.copy())
+        if len(self.grid_history) > self.history_length:
+            self.grid_history.pop(0)
+
+        combined_grid = np.sum(self.grid_history, axis=0)
+        self.grid = (combined_grid >= self.occupancy_threshold).astype(int)
 
         self.publish_grid()
         self.plan_path()
+
 
     def plan_path(self):
         if self.start is None or self.goal is None:
