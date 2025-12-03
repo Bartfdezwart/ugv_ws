@@ -47,7 +47,7 @@ class RoverDetect(Node):
 
             theta = laser_scan.angle_min + idx * laser_scan.angle_increment
 
-            if scan_range < 0.05 or scan_range > 2.0:
+            if scan_range < 0.05 or scan_range > 1.25:
                 continue
 
 
