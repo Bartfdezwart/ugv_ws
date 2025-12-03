@@ -6,7 +6,7 @@ import rclpy
 import yaml
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage, Image
+from sensor_msgs.msg import CompressedImage, Image, CameraInfo
 from ugv_tools.utils import resolve_ros_path
 
 
@@ -15,7 +15,7 @@ class RectifyCamera(Node):
         super().__init__("rectify_camera")
 
         # Load the camera parameters from file
-        self.declare_parameter("camera_parameter_file", "package://ugv_vision/config/better_camera_params.yaml")
+        self.declare_parameter("camera_parameter_file", "package://ugv_vision/config/better_camera_params_2x.yaml")
         camera_parameter_file = self.get_parameter("camera_parameter_file").get_parameter_value().string_value
         if camera_parameter_file == "":
             raise RuntimeError("Required parameter 'camera_parameter_file' not set!")
@@ -33,12 +33,15 @@ class RectifyCamera(Node):
             # Set the distortion coefficients
             self.dist_coef = np.array(config["distortion_coefficients"]["data"])
 
+        self.camera_matrix_pub = self.create_publisher(CameraInfo, "/camera_matrix", 10)
+        self.create_timer(5, self.publish_camera_matrix)
+
         # Initialize the cvbridge for the cv-ros image conversion
         self.bridge = CvBridge()
 
         # Image subscriber
         self.image_sub = self.create_subscription(
-            Image, "image", self.image_callback, 10
+            Image, "/image_raw", self.image_callback, 10
         )
 
         # Publisher for the rectified image
@@ -49,6 +52,10 @@ class RectifyCamera(Node):
         )
 
         self.get_logger().info("Started rectify camera node")
+
+    def publish_camera_matrix(self):
+        self.camera_matrix_pub.publish(CameraInfo(k=self.camera_matrix.flatten()))
+
 
     def image_callback(self, image_msg: Image):
         # Count the number of subscribers so we can determine later if we should publish
@@ -72,6 +79,17 @@ class RectifyCamera(Node):
                     rectified_image, encoding="bgr8", header=image_msg.header
                 )
             )
+
+
+
+        # Compute rectified info
+        raw_K = self.camera_matrix
+
+        h, w = image.shape[:2]
+        # new_K, _ = cv2.getOptimalNewCameraMatrix(raw_K, self.dist_coef, (w, h), alpha=0)
+
+ 
+
 
         # Publish a compressed version of the rectified image
         if rect_compressed_subscriber_count:

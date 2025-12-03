@@ -7,18 +7,33 @@ import numpy as np
 import rclpy
 import rerun as rr
 from cv_bridge import CvBridge
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage, Image, JointState
+from sensor_msgs.msg import CompressedImage, Image, JointState, LaserScan
+from std_msgs.msg import Header, Int8MultiArray, MultiArrayLayout, MultiArrayDimension
+
 from ugv_interface.msg import AprilTagArray, LineArray
+from nav_2d_msgs.msg import Path2D
+from ament_index_python.packages import get_package_share_directory
 
-from ugv_tools.urdf_loader import URDFLogger
+from ugv_tools.urdf_loader import URDFLogger, origin_to_transform
 
-# The root is the ugv_ws/
-WS_ROOT = Path(__file__).parents[6]
-if WS_ROOT.parts[-1] != "ugv_ws":
-    raise NotImplementedError
+IMAGE_DETECTION_SIZE = np.array([1280, 960]) * 2
+IMAGE_STREAM_SIZE = np.array([640, 480])
+IMAGE_DETECTION_TO_STREAM_SCALE = IMAGE_DETECTION_SIZE / IMAGE_STREAM_SIZE
 
+from pathlib import Path
+
+SCRIPT_PATH = Path(__file__).resolve()
+
+for parent in SCRIPT_PATH.parents:
+    if parent.name == "ugv_ws":
+        WS_ROOT = parent
+        break
+else:
+    raise RuntimeError(f"Could not find workspace root starting from {SCRIPT_PATH}")
+
+print(f"Workspace root detected as: {WS_ROOT}")
 
 class RerunLogging(Node):
     def __init__(self):
@@ -58,20 +73,17 @@ class RerunLogging(Node):
 
         # Movement update subscribers
         self.robot_pose_sub = self.create_subscription(
-            Pose2D,
-            "/robot_pose",
+            PoseStamped,
+            "/rover_pose",
             self.log_robot_pose,
             10,
         )
 
         self.camera_pose_sub = self.create_subscription(
-            JointState,
-            "/ugv/joint_states",
-            self.log_camera_pose,
-            10
+            JointState, "/ugv/joint_states", self.log_camera_pose, 10
         )
 
-        # Detection subscribers
+        # Line detection subscribers
         self.top_lines_sub = self.create_subscription(
             LineArray,
             "/linedetect",
@@ -86,19 +98,47 @@ class RerunLogging(Node):
             10,
         )
 
+        # April tag logging
         self.apriltags_sub = self.create_subscription(
             AprilTagArray,
-            "/apriltags",
+            "/apriltags_distance",
             self.log_april_tag,
             10,
         )
         self.clear_apriltags_timer = self.create_timer(0.2, self.clear_apriltags)
         self.apriltags_are_cleared = True
 
-        self.bridge = CvBridge()
+        self.target_point_sub = self.create_subscription(
+            PointStamped, "target_point", self.log_target_point, 10
+        )
 
+        self.beacon_sub = self.create_subscription(
+            PoseArray, "beacon_pose", self.log_beacons, 10
+        )
+
+        # Lidar logging
+        self.lidar_sub = self.create_subscription(
+            LaserScan, "/scan", self.log_lidar, 10
+        )
+
+        self.robot_detection_sub = self.create_subscription(
+            PoseArray, "/robot_detection", self.log_robot_detection, 10
+        )
+
+        # Path logging
+        self.path_sub = self.create_subscription(
+            Path2D, "/path", self.log_path, 10
+        )
+
+        # Grid logging
+        self.grid_walls_sub = self.create_subscription(
+            PoseArray, "/grid_walls", self.log_planning_grid, 10
+        )
+
+        self.bridge = CvBridge()
         self.log_urdf()
         self.log_field()
+        rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Z_UP, static=True)
 
     def init_stream_sink(self):
         self.declare_parameter("rerun_ip", "127.0.0.1")
@@ -149,24 +189,79 @@ class RerunLogging(Node):
         recording_stream = rr.get_global_data_recording()
         urdf_logger.log(recording_stream)
 
+        dynamic_joints = []
         for joint in urdf_logger.urdf.joints:
             entity_path = urdf_logger.joint_entity_path(joint)
-            urdf_logger.log_joint(entity_path, joint, recording_stream)
+            if "pt_link" in entity_path.split("/")[-1]:
+                dynamic_joints.append((entity_path, joint))
+            else:
+                urdf_logger.log_joint(entity_path, joint, recording_stream)
+
+        for entity_path, joint in dynamic_joints:
+            rr.set_time_nanos("ros_time", nanos=self.get_clock().now().nanoseconds)
+            transform = origin_to_transform(joint.origin)
+            rr.log(
+                entity_path,
+                transform,
+            )
 
     def log_field(self):
         field_path = WS_ROOT / "assets" / "field.glb"
         rr.log("/world/field", rr.Asset3D(path=field_path), static=True)
+
+    def log_beacons(self, beacon_poses: PoseArray):
+        translations = []
+        quaternions = []
+        for pose in beacon_poses.poses:
+            translations.append([pose.position.x, pose.position.y, pose.position.z])
+            quaternions.append(
+                [
+                    pose.orientation.x,
+                    pose.orientation.y,
+                    pose.orientation.z,
+                    pose.orientation.w,
+                ]
+            )
+        translations = np.array(translations)
+        quaternions = np.array(quaternions)
+
+        for i, (t, q) in enumerate(zip(translations, quaternions)):
+            rr.log(
+                f"world/beacons/beacon_{i}/plane",
+                rr.Boxes3D(sizes=[0.3, 0.28 * 2, 0.05], fill_mode="solid"),
+            )
+            rr.log(
+                f"world/beacons/beacon_{i}/plane",
+                rr.Transform3D(translation=[0.0, 0.0, -0.05]),
+            )
+            rr.log(
+                f"world/beacons/beacon_{i}/xyz",
+                rr.Arrows3D(
+                    vectors=[[0.25, 0, 0], [0, 0.25, 0], [0, 0, 0.25]],
+                    colors=[[255, 0, 0], [0, 255, 0], [0, 0, 255]],
+                    radii=[0.02, 0.02, 0.02],
+                ),
+            )
+            rr.log(
+                f"world/beacons/beacon_{i}",
+                rr.Transform3D(translation=t, rotation=rr.Quaternion(xyzw=q)),
+            )
+
+            # rr.log(
+            #     f"world/beacons/beacon_{i}/xyz",
+            #     rr.Transform3D(rotation=rr.Quaternion(xyzw=q)),
+            # )
+
+        self.destroy_subscription(self.beacon_sub)
 
     def log_image(self, image: Image, image_name: str):
         cv_img = self.bridge.imgmsg_to_cv2(image, desired_encoding="bgr8")
 
         time_nanos = image.header.stamp.sec * 1_000_000_000 + image.header.stamp.nanosec
         rr.set_time_nanos("ros_time", time_nanos)
-        rr.log(f"camera/{image_name}", rr.Image(cv_img, rr.ColorModel.BGR))
+        rr.log(f"camera/{image_name}", rr.Image(cv_img, rr.ColorModel.BGR).compress())
 
-    def log_compressed_image(
-        self, compressed_image: CompressedImage, image_name: str
-    ):
+    def log_compressed_image(self, compressed_image: CompressedImage, image_name: str):
         cv_img = self.bridge.compressed_imgmsg_to_cv2(
             compressed_image, desired_encoding="bgr8"
         )
@@ -176,50 +271,62 @@ class RerunLogging(Node):
             + compressed_image.header.stamp.nanosec
         )
         rr.set_time_nanos("ros_time", time_nanos)
-        rr.log(f"camera/compressed/{image_name}", rr.Image(cv_img, rr.ColorModel.BGR))
+        rr.log(
+            f"camera/compressed/{image_name}",
+            rr.Image(cv_img, rr.ColorModel.BGR),
+        )
 
     def log_camera_pose(self, joint_states: JointState):
-        try:
-            index = joint_states.name.index("pt_base_link_to_pt_link1")
-            angle = rr.Angle(rad=joint_states.position[index])
-            rr.log(
+        timestamp = joint_states.header.stamp
+        if timestamp.sec == 0 and timestamp.nanosec == 0:
+            rr.set_time_nanos("ros_time", nanos=self.get_clock().now().nanoseconds)
+        else:
+            time_nanos = timestamp.sec * 1_000_000_000 + timestamp.nanosec
+            rr.set_time_nanos("ros_time", time_nanos)
+
+        index = joint_states.name.index("pt_base_link_to_pt_link1")
+        angle = rr.Angle(rad=joint_states.position[index])
+        rr.log(
             "world/rover/base_footprint/base_link/pt_base_link/pt_link1",
             rr.Transform3D(
                 clear=False,
-                rotation=rr.RotationAxisAngle(axis=(0, 0, 1), angle=angle),
+                rotation=rr.RotationAxisAngle((0, 0, 1), angle),
             ),
         )
-        # list.index(a) gives a ValueError when `a` can not be found in `list`
-        except ValueError:
-            pass
 
-        try:
-            index = joint_states.name.index("pt_link1_to_pt_link2")
-            angle = rr.Angle(rad=joint_states.position[index])
-            rr.log(
+        index = joint_states.name.index("pt_link1_to_pt_link2")
+        rad = joint_states.position[index]
+        rr.log(
             "world/rover/base_footprint/base_link/pt_base_link/pt_link1/pt_link2",
             rr.Transform3D(
                 clear=False,
-                rotation=rr.RotationAxisAngle(axis=(0, -1, 0), angle=angle),
+                rotation=rr.RotationAxisAngle(axis=(0, -1, 0), angle=rad),
             ),
         )
-        # list.index(a) gives a ValueError when `a` can not be found in `list`
-        except ValueError:
-            pass
 
-    def log_robot_pose(self, pose: Pose2D):
-        x = pose.x
-        y = pose.y
-        yaw = pose.theta
+    def log_robot_pose(self, stamped_pose: PoseStamped):
+        time_nanos = (
+            stamped_pose.header.stamp.sec * 1_000_000_000
+            + stamped_pose.header.stamp.nanosec
+        )
+        rr.set_time_nanos("ros_time", time_nanos)
+
+        pose = stamped_pose.pose
+        point = pose.position
+
+        x = point.y
+        y = -point.x
+        orientation = pose.orientation
 
         rr.log(
             "world/rover",
             rr.Transform3D(
                 translation=(x, y, 0),
-                rotation=rr.RotationAxisAngle((0,0,1), rr.Angle(rad=yaw))
-            )
+                rotation=rr.Quaternion(
+                    xyzw=(orientation.x, orientation.y, orientation.z, orientation.w)
+                ),
+            ),
         )
-
 
     def log_lines(self, lines: LineArray, line_name: str, rgb_color: tuple[int]):
         data = lines.data
@@ -250,10 +357,17 @@ class RerunLogging(Node):
         lines = []
         half_sizes = []
         labels = []
+        distances = []
+        class_ids = []
         for tag in apriltags.detections:
-            center = np.array((tag.centre.x, tag.centre.y))
+            center = (
+                np.array((tag.centre.x, tag.centre.y)) / IMAGE_DETECTION_TO_STREAM_SCALE
+            )
 
-            corners = np.array([(corner.x, corner.y) for corner in tag.corners])
+            corners = (
+                np.array([(corner.x, corner.y) for corner in tag.corners])
+                / IMAGE_DETECTION_TO_STREAM_SCALE
+            )
             lines.append(np.vstack([corners, corners[0]]))
 
             min_xy = corners.min(axis=0)
@@ -262,16 +376,26 @@ class RerunLogging(Node):
 
             centers.append(center)
             half_sizes.append(half_size)
-            labels.append(f"Tag {tag.id}")
+            distances.append(f"{tag.distance:.3f}")
+            class_ids.append(tag.id)
 
         # Log detected apriltags
         rr.log(
-            "apriltag",
+            "apriltags/outlines",
             rr.LineStrips2D(
                 lines,
-                colors=[(0, 255, 0)] * len(lines),
-                labels=labels,
-                show_labels=True,
+                class_ids=class_ids,
+                radii=1.0,
+            ),
+        )
+        rr.log(
+            "apriltags/center",
+            rr.Points2D(centers, radii=1.5, class_ids=class_ids),
+        )
+        rr.log(
+            "apriltags/distance",
+            rr.Points2D(
+                centers, labels=distances, class_ids=class_ids, show_labels=True
             ),
         )
 
@@ -284,6 +408,97 @@ class RerunLogging(Node):
             # Clear the apriltag entity
             rr.log("apriltag", rr.Clear(recursive=False))
             self.apriltags_are_cleared = True
+
+    def log_target_point(self, stamped_point: PointStamped):
+        stamp = stamped_point.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+        point = stamped_point.point
+
+        rr.log(
+            "world/target_point",
+            rr.Ellipsoids3D(
+                centers=[[point.y, -point.x, 0]],
+                fill_mode=rr.components.FillMode.Solid,
+                half_sizes=[[0.075, 0.075, 0.075]],
+                colors=[[255, 0, 0]],
+            ),
+        )
+
+    def log_lidar(self, laser_scan: LaserScan):
+        stamp = laser_scan.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+        range_min = laser_scan.range_min
+        range_max = laser_scan.range_max
+
+        points = [
+            (scan_range, idx * laser_scan.angle_increment)
+            for idx, scan_range in enumerate(laser_scan.ranges)
+            if scan_range < range_max and scan_range > range_min
+        ]
+
+        points_xy = map(
+            lambda polar_point: (
+                polar_point[0] * np.cos(polar_point[1]),
+                polar_point[0] * np.sin(polar_point[1]),
+                0.0,
+            ),
+            points,
+        )
+        rr.log("/world/rover/base_footprint/base_link/base_lidar_link/lidar", rr.Points3D(list(points_xy)))
+
+
+    def log_robot_detection(self, pose_array: PoseArray):
+
+        stamp = pose_array.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+        # convert to centimeters if needed for visibility
+        pts = [(p.position.y, -p.position.x, 0.1) for p in pose_array.poses]
+
+        rr.log(
+            "/world/object_detection",
+            rr.Points3D(pts)
+        )
+
+
+    def log_planning_grid(self, pose_array: PoseArray):
+        stamp = pose_array.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+        poses = pose_array.poses
+        wall_height = 0.1
+        wall_width = 0.04
+        centers = [(pose.position.y, -pose.position.x, wall_height) for pose in poses]
+        box_half_size = [wall_width / 2, wall_width / 2, wall_height / 2]
+        box_color = (0.0, 0.0, 0.0)
+        box_radii = 0.005
+
+        rr.log(
+            "world/path_planning/grid",
+            rr.Boxes3D(
+                centers=centers,
+                half_sizes=box_half_size * len(centers),
+                colors=[box_color] * len(centers),
+                radii=[box_radii] * len(centers),
+                fill_mode=rr.components.FillMode.MajorWireframe
+            ),
+        )
+
+
+    def log_path(self, path: Path2D):
+        stamp = path.header.stamp
+        rr.set_time_nanos("ros_time", stamp.sec * 1_000_000_000 + stamp.nanosec)
+
+        path_points = [(point.y, -point.x, 0.04) for point in path.poses]
+
+        rr.log(
+            "world/path/point",
+            rr.Points3D(
+                path_points,
+            ),
+        )
 
 
 def main(args=None):

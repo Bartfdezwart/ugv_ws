@@ -6,8 +6,10 @@ import rclpy
 from apriltag import apriltag
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage, Image
+from sensor_msgs.msg import CompressedImage, Image, CameraInfo
 from ugv_interface.msg import AprilTag, AprilTagArray, Point
+
+IMAGE_STREAM_SIZE = (640, 480)
 
 
 class ApriltagCtrl(Node):
@@ -16,8 +18,8 @@ class ApriltagCtrl(Node):
         self.visualize = visualize
 
         # Create a subscription to the image_raw topic
-        self.image_raw_subscription = self.create_subscription(Image,'/image_rect', self.image_callback,10)
-        # 
+        self.image_raw_subscription = self.create_subscription(CompressedImage,'/image_rect/compressed', self.image_callback,10)
+
         self.image_preprocessed_publisher = self.create_publisher(CompressedImage,'/image_rect/preprocessed',10)
         # Create a publisher to the apriltag_ctrl/result topic
         self.apriltag_ctrl_publisher = self.create_publisher(Image, '/apriltag_ctrl/result', 10)
@@ -29,28 +31,20 @@ class ApriltagCtrl(Node):
         # self.detector = apriltag("tag36h11")
         self.apriltag_family = "tagStandard41h12"
         self.detector = apriltag(self.apriltag_family)
+        self.scale = 2
 
     def detect_apritag(self, frame):
-
         return type
 
-    def image_callback(self, msg):
 
+    def image_callback(self, msg):
         # Convert the ROS Image message to an OpenCV image
-        frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        # frame = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
+        frame = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
 
         # Convert the image to grayscale
-        scale = 2
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.resize(gray, (gray.shape[1] * scale, gray.shape[0] * scale))
-
-        # Apply histogram equalization
-        # gray = cv2.equalizeHist(gray)
-
-        # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
-        clahe = cv2.createCLAHE(clipLimit=40, tileGridSize=(4,4))
-        gray = clahe.apply(gray)
+        gray = cv2.resize(gray, (gray.shape[1] * self.scale, gray.shape[0] * self.scale))
+        gray = cv2.GaussianBlur(gray,(3,3),cv2.BORDER_DEFAULT)
 
         # Sharpen image
         kernel = np.array([[0, -1, 0],
@@ -60,6 +54,7 @@ class ApriltagCtrl(Node):
 
         # Publish the preprocessed image
         preprocessed_image = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+        preprocessed_image = cv2.resize(preprocessed_image, IMAGE_STREAM_SIZE)
         preprocessed_msg = self.bridge.cv2_to_compressed_imgmsg(preprocessed_image)
         preprocessed_msg.header = msg.header
         self.image_preprocessed_publisher.publish(preprocessed_msg)
@@ -88,35 +83,6 @@ class ApriltagCtrl(Node):
                 )
             )
 
-        if not self.visualize:
-            return
-
-        # Loop through the detected apriltags
-        for r in results:
-            # Get the corners of the apriltag
-            corners = r['lb-rb-rt-lt'].astype(int)
-        
-            # Draw a polygon around the apriltag
-            cv2.polylines(frame, [corners], isClosed=True, color=(0, 255, 0), thickness=2)
-        
-            # Get the center of the apriltag
-            center_x, center_y = int(r['center'][0]), int(r['center'][1])
-            # Draw a circle at the center of the apriltag
-            cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
-        
-            # Print the ID and center of the apriltag
-            print(f'Tag ID: {r["id"]}, Center: ({center_x}, {center_y})')
-
-        # Convert the OpenCV image back to a ROS Image message
-        frame = cv2.resize(frame, (frame.shape[1] // scale, frame.shape[0] // scale))
-        result_img_msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
-        # result_img_msg = self.bridge.cv2_to_imgmsg(frame)
-        # Publish the result image message
-        self.apriltag_ctrl_publisher.publish(result_img_msg)
-        # Show the result image
-        cv2.imshow('ctrled Image', frame)
-        # # Wait for 1 millisecond
-        cv2.waitKey(1)
 
 def main(args=None):
     parser = argparse.ArgumentParser()
@@ -130,7 +96,6 @@ def main(args=None):
 
     # Initialize the ROS client library
     rclpy.init(args=args)
-    # apriltag_ctrl = Apriltagctrl()
     # Create an instance of the ApriltagCtrl node
     apriltag_ctrl = ApriltagCtrl(parsed_args.visualize)
     # Spin the node

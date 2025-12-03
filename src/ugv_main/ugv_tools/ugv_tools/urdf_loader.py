@@ -87,15 +87,11 @@ class URDFLogger:
         #     rotation = st.Rotation.from_euler("xyz", joint.origin.rpy).as_matrix()
         transform = origin_to_transform(joint.origin)
 
-        static = True
-        if "pt_link" in entity_path.split("/")[-1]:
-            static = False
-
         if transform is not None:
             recording.log(
                 entity_path,
                 transform,
-                static=static,
+                static=True,
             )
 
     def log_visual(

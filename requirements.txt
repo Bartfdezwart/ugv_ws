@@ -17,3 +17,4 @@ trimesh
 typeguard
 apriltag
 git+https://github.com/iago-suarez/ELSED.git
+filterpy
