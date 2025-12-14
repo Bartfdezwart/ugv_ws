@@ -2,9 +2,13 @@ import numpy as np
 import open3d as o3d
 from collections import defaultdict, deque
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import cv2
+import os
 
 from astar import Astar
-# from dijkstra import Dijkstra
+from dijkstra import Dijkstra
+
 
 def clip_to_grid(pos, shape):
     r = int(np.clip(pos[0], 0, shape[0] - 1))
@@ -51,7 +55,6 @@ def inflate_grid(grid, radius):
 
     return inflated
 
-
 maze_pcd = o3d.io.read_point_cloud("filtered_cloud.ply")
 maze_points = np.asarray(maze_pcd.points)
 
@@ -63,7 +66,7 @@ maze_kd = o3d.geometry.KDTreeFlann(maze_pcd)
 keep_idx = []
 for i, p in enumerate(lidar_points):
     _, _, dist = maze_kd.search_knn_vector_3d(p, 1)
-    if dist[0] <= 1.0 ** 2:
+    if dist[0] <= 0.3 ** 2:
         keep_idx.append(i)
 
 lidar_points = lidar_points[keep_idx]
@@ -72,10 +75,9 @@ lidar_filtered = o3d.geometry.PointCloud()
 lidar_filtered.points = o3d.utility.Vector3dVector(lidar_points)
 o3d.io.write_point_cloud("lidar_filtered.ply", lidar_filtered)
 
-
-grid_res = 0.04
-min_points_per_cell = 3
-max_gap = 4
+grid_res = 0.02
+min_points_per_cell = 2
+max_gap = 8
 min_run_len = 2
 
 xy = lidar_points[:, :2]
@@ -128,7 +130,6 @@ for x, ys in cols.items():
 
 
 wall_cells = set()
-
 for ori, (x1, y1, x2, y2) in segments:
     if ori == "h":
         for x in range(x1, x2 + 1):
@@ -136,6 +137,7 @@ for ori, (x1, y1, x2, y2) in segments:
     else:
         for y in range(y1, y2 + 1):
             wall_cells.add((y, x1))
+
 
 ys, xs = zip(*wall_cells)
 min_y, max_y = min(ys), max(ys)
@@ -150,44 +152,66 @@ for y, x in wall_cells:
 print("Grid shape:", grid.shape)
 
 
-start_requested = (50, 10)
-goal_requested  = (50, 100)
+start_requested = np.array([50, 50]) * (0.01 / grid_res)
+goal_requested  = np.array([70, 370]) * (0.01 / grid_res)
 
 start = clip_to_grid(start_requested, grid.shape)
-goal  = clip_to_grid(goal_requested,  grid.shape)
+goal  = clip_to_grid(goal_requested, grid.shape)
 
 start = nearest_free_cell(grid, start)
 goal  = nearest_free_cell(grid, goal)
 
-print("Start:", start_requested, "->", start)
-print("Goal :", goal_requested,  "->", goal)
-
-
-inflation_radius = 3
+inflation_radius = int(8 * (0.01 / grid_res))
 grid_for_planning = inflate_grid(grid, inflation_radius)
 
 planner = Astar(grid_for_planning, start, goal)
 # planner = Dijkstra(grid_for_planning, start, goal)
 path = planner.find_path()
 
-if path is None:
-    print("No path found")
-    raise SystemExit(1)
-
 
 vis = np.zeros((*grid.shape, 3), dtype=np.uint8)
-
 vis[grid == 0] = [255, 255, 255]
 vis[grid == 1] = [0, 0, 0]
+vis[grid_for_planning - grid == 1] = [255, 255, 0]
 
-for r, c in path:
-    vis[r, c] = [255, 0, 0]
+if path is not None:
+    for r, c in path:
+        vis[r, c] = [255, 0, 0]
 
 sr, sc = start
 gr, gc = goal
 vis[sr, sc] = [0, 0, 255]
 vis[gr, gc] = [0, 255, 0]
 
-plt.figure(figsize=(10, 10))
-plt.imshow(vis, origin="lower")
+fig, ax = plt.subplots(figsize=(10, 10))
+ax.axis("off")
+ax.imshow(vis, origin="lower")
 plt.show()
+
+
+nav2_dir = "nav2_map"
+os.makedirs(nav2_dir, exist_ok=True)
+
+nav2_map = np.zeros_like(grid, dtype=np.uint8)
+nav2_map[grid == 0] = 255
+nav2_map[grid == 1] = 0
+
+nav2_map = np.flipud(nav2_map)
+
+map_png = os.path.join(nav2_dir, "map.png")
+cv2.imwrite(map_png, nav2_map)
+
+origin_x = min_x * grid_res
+origin_y = min_y * grid_res
+
+map_yaml = os.path.join(nav2_dir, "map.yaml")
+with open(map_yaml, "w") as f:
+    f.write(f"""image: map.png
+resolution: {grid_res}
+origin: [{origin_x:.3f}, {origin_y:.3f}, 0.0]
+occupied_thresh: 0.65
+free_thresh: 0.25
+negate: 0
+""")
+
+print(f"[Nav2] Map exported to {nav2_dir}/")
